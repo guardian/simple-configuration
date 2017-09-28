@@ -19,7 +19,7 @@ val config = ConfigurationLoader.load(identity)()
 Let's look in detail at what's happening here.
 
 ### AppIdentity.whoAmI (optional)
-The `AppIdentity.whoAmI` function is a helper that will try to identify your application via the tags (`App`, `Stack`, `Stage`) set on the ec2 instance you are running. It will need the appropriate IAM permission to be able to query the ec2 API (see paragraph below)
+The `AppIdentity.whoAmI` function is a helper that will try to identify your application via the tags (`App`, `Stack`, `Stage`) set on the ec2 instance you are running. It will need the appropriate IAM permission to be able to query the ec2 API (see [IAM paragraph below](#iam-permissions))
 
 If you are not running on an ec2 instance, for instance when testing locally, the function will use the default  values you provided.
 
@@ -39,7 +39,7 @@ If you don't need to auto-detect the identity of your application yourself, you 
 ### ConfigurationLoader.load
 
 This function will load your configuration from S3, or locally if you are in dev mode.
-It will use the identity to detect if the stage is "DEV", and load the configuration accordingly. It will of course need the appropriate IAM permission, as defined in the paragraph bellow.
+It will use the identity to detect if the stage is "DEV", and load the configuration accordingly. It will of course need the appropriate IAM permission, as defined in the [paragraph bellow](#iam-permissions).
 
 By default the configuration are loaded from the following locations:
 
