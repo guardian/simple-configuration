@@ -63,7 +63,7 @@ The only parameter you need to provide is the identity, other parameters will us
 
 `locationFunction`: This function is a way to customise where to load the configuration depending on the environment. For instance if your configuration is in the same place for two different stacks, you could override the path that will be used. It's a partial function, so it's thought to be used as pattern matching on the `AppIdentity` you provided. You can see an example below.
 
-##Examples
+## Examples
 
 **provide your own credentials**
 ```scala
@@ -96,7 +96,7 @@ class MyApplicationLoader extends ApplicationLoader {
 }
 ```
 
-##Location types
+## Location types
 
 When providing your own mapping between `AppIdentity` and location, you can specify three location types:
 
@@ -107,13 +107,13 @@ When providing your own mapping between `AppIdentity` and location, you can spec
 ### S3ConfigurationLocation
 This will help `ConfigurationLoader.load` locate the file on an S3 bucket. You must provide the bucket name and the complete path to the file.
 
-###FileConfigurationLocation
+### FileConfigurationLocation
 This will be useful when loading a file ouside of your classpath. Typically, a configuration that can contain secrets and that shouldn't be committed on the repository. This is used by default when in DEV mode and points to `~/.gu/${identity.app}.conf`
 
-###ResourceConfigurationLocation
+### ResourceConfigurationLocation
 This will load a configuration file from within your classpath. Typically a file under the `resource` folder of your project. It is useful if your configuration can be committed in your repo and is directly accessible from the classpath. 
 
-##IAM permissions
+## IAM permissions
 - if you use `AppIdentity.whoAmI`
 ```json
 {
