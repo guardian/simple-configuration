@@ -20,6 +20,9 @@ libraryDependencies += "com.gu" %% "simple-s3-configuration" % "1.0"
 Then in your code:
 
 ```scala
+import com.gu.AppIdentity
+import com.gu.conf.ConfigurationLoader
+
 val identity = AppIdentity.whoAmI(defaultAppName = "mobile-apps-api", defaultStackName = "mobile")
 val config = ConfigurationLoader.load(identity)()
 ```
