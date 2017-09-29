@@ -11,7 +11,13 @@ It relies on [lightbend's configuration library](https://github.com/typesafehub/
 
 ## Usage
 
-To load a configuration you can provide your own AWS credentials, or rely on the default value (DefaultAWSCredentialsProviderChain).
+In your `build.sbt`:
+```scala
+resolvers += "Guardian Platform Bintray" at "https://dl.bintray.com/guardian/platforms"
+libraryDependencies += "com.gu" %% "simple-s3-configuration" % "1.0"
+```
+
+Then in your code:
 
 ```scala
 val identity = AppIdentity.whoAmI(defaultAppName = "mobile-apps-api", defaultStackName = "mobile")
@@ -37,6 +43,16 @@ case class AppIdentity(
 ```
 
 If you don't need to auto-detect the identity of your application, you can instantiate an AppIdentity yourself and provide the values you want.
+
+You can optionally provide it your own AWS credentials rather than relying on the defaults if you were to prefer controlling that aspect. It is defined liked that:
+
+```scala
+def whoAmI(
+    defaultAppName: String,
+    defaultStackName: String,
+    credentials: => AWSCredentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
+  ): AppIdentity
+```
 
 ### ConfigurationLoader.load
 
