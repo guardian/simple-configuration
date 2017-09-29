@@ -1,5 +1,7 @@
 # simple-s3-configuration
 
+[ ![Download](https://api.bintray.com/packages/guardian/platforms/simple-s3-configuration/images/download.svg) ](https://bintray.com/guardian/platforms/simple-s3-configuration/_latestVersion)
+
 _A configuration library without any magic_
 
 ## Goal
@@ -21,9 +23,9 @@ Let's look in detail at what's happening here.
 ### AppIdentity.whoAmI (optional)
 The `AppIdentity.whoAmI` function is a helper that will try to identify your application via the tags (`App`, `Stack`, `Stage`) set on the ec2 instance you are running. It will need the appropriate IAM permission to be able to query the ec2 API (see [IAM paragraph below](#iam-permissions))
 
-If you are not running on an ec2 instance, for instance when testing locally, the function will use the default  values you provided.
+If you are not running on an ec2 instance, for instance when testing locally, the function will use the default  values you provided with a "DEV" stage and eu-west-1 AWS region.
 
-It will return you an object of type AppIdentity, defined as follow:
+It will return you an object of type AppIdentity, defined as follows:
 
 ```scala
 case class AppIdentity(
@@ -34,7 +36,7 @@ case class AppIdentity(
 )
 ```
 
-If you don't need to auto-detect the identity of your application yourself, you can instantiate an AppIdentity yourself and provide the values you want.
+If you don't need to auto-detect the identity of your application, you can instantiate an AppIdentity yourself and provide the values you want.
 
 ### ConfigurationLoader.load
 
@@ -57,11 +59,11 @@ def load(
 
 The only parameter you need to provide is the identity, other parameters will use a sensible default.
 
-`identity`: identity is a parameter of type `AppIdentity` that describe your application (name, stack, stage, awsRegion). See above paragraph about AppIdentity.whoAmI
+`identity`: identity is a parameter of type `AppIdentity` that describe your application (name, stack, stage, awsRegion). See [above paragraph](#appidentitywhoami-optional) about AppIdentity.whoAmI
 
 `credentials`: These are the AWS credentials that will be used to load your configuration from S3. The default behaviour should be enough, but if you wanted to customise the way the credentials are picked you could pass it as a parameter. Note that it's a pass-by-name parameter so the content won't be evaluated unless needed. The default behaviour when running locally is to load the configuration from a local file, so credentials won't be evaluated in that case.
 
-`locationFunction`: This function is a way to customise where to load the configuration depending on the environment. For instance if your configuration is in the same place for two different stacks, you could override the path that will be used. It's a partial function, so it's thought to be used as pattern matching on the `AppIdentity` you provided. You can see an example below.
+`locationFunction`: This function is a way to customise where to load the configuration depending on the environment. For instance if your configuration is in the same place for two different stacks or if you're using the same configuration file for multiple apps (multi-module project) you could override the path that will be used. It's a partial function, so it's thought to be used as pattern matching on the `AppIdentity` you provided. You can see an [example below](#examples) or you can see what return types are possible in the [Location Types paragraph](#location-types).
 
 ## Examples
 
@@ -71,6 +73,8 @@ val config = ConfigurationLoader.load(identity, myOwnCredentials)()
 ```
 
 **custom location**
+See [Location Types](#location-types) for a list of all the location types.
+
 ```scala
 val config = ConfigurationLoader.load(identity) {
   case AppIdentity(app, "stack1", stage, _) => S3ConfigurationLocation("mybucket", s"somepath/$stage/$app.conf")
@@ -95,6 +99,13 @@ class MyApplicationLoader extends ApplicationLoader {
   }
 }
 ```
+
+Here's what we're doing above:
+ - Initialise the logs (standard behaviour when using compile time dependencies with Play)
+ - Auto detect the application identity
+ - Load the Lightbend (Typesafe) Config, then wrap it in a Play Configuration
+ - Concatenate the initial play configuration (application.conf) with what has been loaded from S3 or locally
+ - Use that new configuration to instantiate the Play app
 
 ## Location types
 
