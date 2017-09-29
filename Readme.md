@@ -85,7 +85,8 @@ The only parameter you need to provide is the identity, other parameters will us
 
 **provide your own credentials**
 ```scala
-val config = ConfigurationLoader.load(identity, myOwnCredentials)()
+val identity = AppIdentity.whoAmI(defaultAppName = "mobile-apps-api", defaultStackName = "mobile", credentials = myOwnCredentials)
+val config = ConfigurationLoader.load(identity, credentials = myOwnCredentials)()
 ```
 
 **custom location**
