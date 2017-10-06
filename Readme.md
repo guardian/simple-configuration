@@ -1,6 +1,6 @@
-# simple-s3-configuration
+# simple-configuration
 
-[ ![Download](https://api.bintray.com/packages/guardian/platforms/simple-s3-configuration/images/download.svg) ](https://bintray.com/guardian/platforms/simple-s3-configuration/_latestVersion)
+[ ![Download](https://api.bintray.com/packages/guardian/platforms/simple-configuration/images/download.svg) ](https://bintray.com/guardian/platforms/simple-configuration/_latestVersion)
 
 _A configuration library without any magic_
 
@@ -14,7 +14,7 @@ It relies on [lightbend's configuration library](https://github.com/typesafehub/
 In your `build.sbt`:
 ```scala
 resolvers += "Guardian Platform Bintray" at "https://dl.bintray.com/guardian/platforms"
-libraryDependencies += "com.gu" %% "simple-s3-configuration" % "1.0"
+libraryDependencies += "com.gu" %% "simple-configuration-s3" % "1.2"
 ```
 
 Then in your code:
@@ -24,7 +24,9 @@ import com.gu.AppIdentity
 import com.gu.conf.ConfigurationLoader
 
 val identity = AppIdentity.whoAmI(defaultAppName = "mobile-apps-api")
-val config = ConfigurationLoader.load(identity)()
+val config = ConfigurationLoader.load(identity) {
+  case identity: AwsIdentity => S3ConfigurationLocation.default(identity)
+}
 ```
 
 Let's look in detail at what's happening here.
@@ -92,7 +94,9 @@ The only parameter you need to provide is the identity, other parameters will us
 **provide your own credentials**
 ```scala
 val identity = AppIdentity.whoAmI(defaultAppName = "mobile-apps-api", credentials = myOwnCredentials)
-val config = ConfigurationLoader.load(identity, credentials = myOwnCredentials)()
+val config = ConfigurationLoader.load(identity, credentials = myOwnCredentials) {
+  case identity: AwsIdentity => S3ConfigurationLocation.default(identity)
+}
 ```
 
 **custom location**
@@ -116,8 +120,10 @@ class MyApplicationLoader extends ApplicationLoader {
   override def load(context: Context): Application = {
     LoggerConfigurator(context.environment.classLoader) foreach { _.configure(context.environment) }
     val identity = AppIdentity.whoAmI(defaultAppName = "myApp")
-    val loadedConfig = Configuration(ConfigurationLoader.load(identity)())
-    val newContext = context.copy(initialConfiguration = context.initialConfiguration ++ loadedConfig)
+    val loadedConfig = ConfigurationLoader.load(identity) {
+      case identity: AwsIdentity => S3ConfigurationLocation.default(identity)
+    }
+    val newContext = context.copy(initialConfiguration = context.initialConfiguration ++ Configuration(loadedConfig))
     (new BuiltInComponentsFromContext(newContext) with AppComponents).application
   }
 }
@@ -126,9 +132,9 @@ class MyApplicationLoader extends ApplicationLoader {
 Here's what we're doing above:
  - Initialise the logs (standard behaviour when using compile time dependencies with Play)
  - Auto detect the application identity
- - Load the Lightbend (Typesafe) Config, then wrap it in a Play Configuration
- - Concatenate the initial play configuration (application.conf) with what has been loaded from S3 or locally
- - Use that new configuration to instantiate the Play app
+ - Load the Lightbend (Typesafe) Config
+ - Wrap the loaded config in a Play configuration and concatenate the initial play configuration (application.conf) with what has been loaded from S3 or locally
+ - Use the resulting configuration to instantiate the Play app
 
 ## Location types
 
