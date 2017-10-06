@@ -10,12 +10,18 @@ import org.slf4j.LoggerFactory
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 
-case class AppIdentity(
+sealed trait AppIdentity
+
+case class AwsIdentity(
   app: String,
   stack: String,
   stage: String,
   region: String
-)
+) extends AppIdentity
+
+case class DevIdentity(
+  app: String
+) extends AppIdentity
 
 object AppIdentity {
   private val logger = LoggerFactory.getLogger(this.getClass)
@@ -47,7 +53,6 @@ object AppIdentity {
 
   def whoAmI(
     defaultAppName: String,
-    defaultStackName: String,
     credentials: => AWSCredentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
   ): AppIdentity = {
     val region = safeAwsOperation("Failed to identify the regionName of the instance")(Regions.getCurrentRegion)
@@ -63,11 +68,18 @@ object AppIdentity {
 
     val allTags = tags.getOrElse(Map.empty)
 
-    AppIdentity(
-      app = allTags.getOrElse("App", defaultAppName),
-      stack = allTags.getOrElse("Stack", defaultStackName),
-      stage = allTags.getOrElse("Stage", "DEV"),
-      region = region.map(_.getName).getOrElse("eu-west-1")
+    val awsIdentity = for {
+      regionName <- region.map(_.getName)
+      app <- allTags.get("App")
+      stack <- allTags.get("Stack")
+      stage <- allTags.get("Stage")
+    } yield AwsIdentity(
+      app = app,
+      stack = stack,
+      stage = stage,
+      region = regionName
     )
+
+    awsIdentity.getOrElse(DevIdentity(defaultAppName))
   }
 }
