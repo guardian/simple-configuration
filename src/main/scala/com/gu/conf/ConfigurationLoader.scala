@@ -4,7 +4,7 @@ import java.io.File
 
 import com.amazonaws.auth.{AWSCredentialsProvider, DefaultAWSCredentialsProviderChain}
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
-import com.gu.AppIdentity
+import com.gu.{AppIdentity, AwsIdentity, DevIdentity}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.slf4j.LoggerFactory
 
@@ -18,7 +18,7 @@ object ConfigurationLoader {
     val s3Client = {
       val builder = AmazonS3ClientBuilder.standard()
       builder.setCredentials(credentials)
-      builder.setRegion(identity.region)
+      builder.setRegion(s3Location.region)
       builder.build()
     }
 
@@ -38,12 +38,12 @@ object ConfigurationLoader {
   private def fromFile(fileLocation: FileConfigurationLocation): Config =
     ConfigFactory.parseFile(fileLocation.file)
 
-  private def defaultDevLocation(identity: AppIdentity): ConfigurationLocation = {
+  private def defaultDevLocation(identity: DevIdentity): ConfigurationLocation = {
     val home = System.getProperty("user.home")
     FileConfigurationLocation(new File(s"$home/.gu/${identity.app}.conf"))
   }
 
-  private def defaultS3Location(identity: AppIdentity): ConfigurationLocation = {
+  private def defaultS3Location(identity: AwsIdentity): ConfigurationLocation = {
     S3ConfigurationLocation(s"${identity.app}-dist", s"${identity.stage}/${identity.stack}/${identity.app}/${identity.app}.conf")
   }
 
@@ -52,8 +52,8 @@ object ConfigurationLoader {
     credentials: => AWSCredentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
   )(locationFunction: PartialFunction[AppIdentity, ConfigurationLocation] = PartialFunction.empty): Config = {
     val getLocation = locationFunction.orElse[AppIdentity, ConfigurationLocation] {
-      case AppIdentity(_, _, "DEV", _) => defaultDevLocation(identity)
-      case _ => defaultS3Location(identity)
+      case devIdentity: DevIdentity => defaultDevLocation(devIdentity)
+      case identity: AwsIdentity => defaultS3Location(identity)
     }
 
     getLocation(identity) match {
