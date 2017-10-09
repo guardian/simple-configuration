@@ -1,6 +1,6 @@
 # simple-configuration
 
-[ ![Download](https://api.bintray.com/packages/guardian/platforms/simple-configuration/images/download.svg) ](https://bintray.com/guardian/platforms/simple-configuration/_latestVersion)
+[ ![Download](https://api.bintray.com/packages/guardian/platforms/simple-configuration-core/images/download.svg) ](https://bintray.com/guardian/platforms/simple-configuration-core/_latestVersion)
 
 _A configuration library without any magic_
 
@@ -14,7 +14,7 @@ It relies on [lightbend's configuration library](https://github.com/typesafehub/
 In your `build.sbt`:
 ```scala
 resolvers += "Guardian Platform Bintray" at "https://dl.bintray.com/guardian/platforms"
-libraryDependencies += "com.gu" %% "simple-configuration-s3" % "1.2"
+libraryDependencies += "com.gu" %% "simple-configuration-s3" % "1.2.0"
 ```
 
 Then in your code:
