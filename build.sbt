@@ -13,6 +13,7 @@ val awsSdkVersion = "1.11.204"
 val core = project
   .settings(
     name := "simple-configuration-core",
+    organization := "com.gu",
     libraryDependencies ++= Seq(
       "com.amazonaws" % "aws-java-sdk-ec2" % awsSdkVersion,
       "com.typesafe" % "config" % "1.3.1",
@@ -24,6 +25,7 @@ val s3 = project
   .dependsOn(core)
   .settings(
     name := "simple-configuration-s3",
+    organization := "com.gu",
     libraryDependencies ++= Seq(
       "com.amazonaws" % "aws-java-sdk-s3" % awsSdkVersion
     )
