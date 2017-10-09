@@ -6,6 +6,7 @@ organization := "com.gu"
 scalaVersion := "2.11.11"
 
 val sharedSettings = Seq(
+  scalaVersion := "2.11.11",
   licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html")),
   organization := "com.gu",
   bintrayOrganization := Some("guardian"),
