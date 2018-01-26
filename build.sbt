@@ -60,6 +60,7 @@ lazy val root = project.in(file("."))
   .aggregate(core, s3)
   .settings(
     publish := {},
+    releaseCrossBuild := true,
     crossScalaVersions := Seq(scala_2_11, scala_2_12)
   )
 
