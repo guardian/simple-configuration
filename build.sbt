@@ -3,10 +3,17 @@ import ReleaseTransformations._
 name := "simple-configuration"
 organization := "com.gu"
 
-scalaVersion := "2.11.11"
+val scala_2_11: String = "2.11.12"
+val scala_2_12: String = "2.12.4"
+
+val awsSdkVersion = "1.11.204"
+
+scalaVersion := scala_2_11
 
 val sharedSettings = Seq(
-  scalaVersion := "2.11.11",
+  scalaVersion := scala_2_11,
+  crossScalaVersions := Seq(scala_2_11, scala_2_12),
+  releaseCrossBuild := true,
   licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html")),
   organization := "com.gu",
   bintrayOrganization := Some("guardian"),
@@ -27,8 +34,6 @@ val sharedSettings = Seq(
     pushChanges
   )
 )
-
-val awsSdkVersion = "1.11.204"
 
 val core = project
   .settings(sharedSettings)
@@ -53,5 +58,8 @@ val s3 = project
 
 lazy val root = project.in(file("."))
   .aggregate(core, s3)
-  .settings(publish := {})
+  .settings(
+    publish := {},
+    crossScalaVersions := Seq(scala_2_11, scala_2_12)
+  )
 
