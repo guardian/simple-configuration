@@ -6,7 +6,7 @@ organization := "com.gu"
 val scala_2_11: String = "2.11.12"
 val scala_2_12: String = "2.12.4"
 
-val awsSdkVersion = "1.11.204"
+val awsSdkVersion = "1.11.282"
 
 scalaVersion := scala_2_11
 
@@ -41,7 +41,7 @@ val core = project
     name := "simple-configuration-core",
     libraryDependencies ++= Seq(
       "com.amazonaws" % "aws-java-sdk-ec2" % awsSdkVersion,
-      "com.typesafe" % "config" % "1.3.1",
+      "com.typesafe" % "config" % "1.3.3",
       "org.slf4j" % "slf4j-api" % "1.7.25"
     )
   )
