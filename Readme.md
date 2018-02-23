@@ -5,16 +5,16 @@
 _A configuration library without any magic_
 
 ## Goal
-This library will help you load the configuration of your application from s3.
+This library will help you load the configuration of your application from s3 or the ssm parameter store.
 
-It relies on [lightbend's configuration library](https://github.com/typesafehub/config), AWS' s3 sdk and AWS' ec2 sdk.
+It relies on [lightbend's configuration library](https://github.com/typesafehub/config), AWS' s3 sdk, ssm sdk and ec2 sdk.
 
 ## Usage
 
 In your `build.sbt`:
 ```scala
 resolvers += "Guardian Platform Bintray" at "https://dl.bintray.com/guardian/platforms"
-libraryDependencies += "com.gu" %% "simple-configuration-s3" % "1.2.0"
+libraryDependencies += "com.gu" %% "simple-configuration-s3" % "1.3.0"
 ```
 
 Then in your code:
@@ -64,14 +64,16 @@ def whoAmI(
 
 ### ConfigurationLoader.load
 
-This function will load your configuration from S3, or locally if you are in dev mode.
+This function will load your configuration from its source (S3, file, SSM), or locally if you are in dev mode.
 It will use the identity to understand where the app is running, and load the configuration accordingly. It will of course need the appropriate IAM permission, as defined in the [paragraph bellow](#iam-permissions).
 
 By default the configuration are loaded from the following locations:
 
 `~/.gu/${identity.app}.conf` for the local file if you are in dev mode (AppIdentity is of type DevIdentity)
 
-`s3://${identity.app}-dist/${identity.stage}/${identity.stack}/${identity.app}/${identity.app}.conf` once running on an EC2 instance
+`s3://${identity.app}-dist/${identity.stage}/${identity.stack}/${identity.app}/${identity.app}.conf` once running on an EC2 instance or
+
+`/${identity.stage}/${identity.stack}/${identity.app}/*` if you're loading it form the SSM parameter store
 
 `ConfigurationLoader.load` is defined like that:
 ```scala
@@ -99,12 +101,22 @@ val config = ConfigurationLoader.load(identity, credentials = myOwnCredentials) 
 }
 ```
 
-**custom location**
+**custom s3 location**
 See [Location Types](#location-types) for a list of all the location types.
 
 ```scala
 val config = ConfigurationLoader.load(identity) {
   case AwsIdentity(app, "stack1", stage, _) => S3ConfigurationLocation("mybucket", s"somepath/$stage/$app.conf")
+  case DevIdentity(myApp) => ResourceConfigurationLocation(s"localdev-${myApp}.conf")
+}
+```
+
+**custom ssm location**
+See [Location Types](#location-types) for a list of all the location types.
+
+```scala
+val config = ConfigurationLoader.load(identity) {
+  case AwsIdentity(app, "stack1", stage, _) => SSMConfigurationLocation(s"/myAPI/$stage")
   case DevIdentity(myApp) => ResourceConfigurationLocation(s"localdev-${myApp}.conf")
 }
 ```
@@ -138,14 +150,19 @@ Here's what we're doing above:
 
 ## Location types
 
-When providing your own mapping between `AppIdentity` and location, you can specify three location types:
+When providing your own mapping between `AppIdentity` and location, you can specify four location types:
 
 - `S3ConfigurationLocation(bucket: String, path: String, region: String)`
+- `SSMConfigurationLocation(path: String, region: String)`
 - `FileConfigurationLocation(file: File)`
 - `ResourceConfigurationLocation(resourceName: String)`
 
 ### S3ConfigurationLocation
-This will help `ConfigurationLoader.load` locate the file on an S3 bucket. You must provide the bucket name and the complete path to the file. The region defaults to the autodetected one, but you can override it if you please.
+This will help `ConfigurationLoader.load` locate the file on an S3 bucket. You must provide the bucket name and the complete path to the file. The region defaults to the autodetected one, but you can override it if you please. The file fetched from S3 is expected to be a valid typesafe config file (HOCON, json or properties)
+
+### SSMConfigurationLocation
+This will help `ConfigurationLoader.load` select all the parameters in the SSM parameter store. The path must start with a / and should not finish with one. Here's a path example `"/this/is/valid"`.
+Parameters are expected to be encrypted and named following this convention: `"/path/my.typesafe.config.key"`. Here's an example: `/PROD/mobile/mobile-fronts/apis.capi.timeout`
 
 ### FileConfigurationLocation
 This will be useful when loading a file ouside of your classpath. Typically, a configuration that can contain secrets and that shouldn't be committed on the repository. This is used by default when in DEV mode and points to `~/.gu/${identity.app}.conf`

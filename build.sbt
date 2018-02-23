@@ -56,8 +56,18 @@ val s3 = project
     )
   )
 
+val ssm = project
+  .settings(sharedSettings)
+  .dependsOn(core)
+  .settings(
+    name := "simple-configuration-ssm",
+    libraryDependencies ++= Seq(
+      "com.amazonaws" % "aws-java-sdk-ssm" % awsSdkVersion
+    )
+  )
+
 lazy val root = project.in(file("."))
-  .aggregate(core, s3)
+  .aggregate(core, s3, ssm)
   .settings(
     publish := {},
     releaseCrossBuild := true,
