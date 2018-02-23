@@ -181,11 +181,26 @@ This will load a configuration file from within your classpath. Typically a file
     "Resource": "*"
 }
 ```
-- for `ConfigurationLoader.load`
+- for `ConfigurationLoader.load` when using S3
 ```json
 {
     "Effect": "Allow",
     "Action": "s3:GetObject",
     "Resource": "arn:aws:s3:::mybucket/*"
 }
+```
+- for `ConfigurationLoader.load` when using SSM
+```json
+{
+    "Effect": "Allow",
+    "Action": "ssm:GetParametersByPath",
+    "Resource": "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/path/used"
+}
+```
+or when using cloudformation
+```yaml
+  - Action:
+    - ssm:GetParametersByPath
+    Effect: Allow
+    Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${Stage}/${Stack}/${App}
 ```
