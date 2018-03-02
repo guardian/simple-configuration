@@ -1,21 +1,24 @@
 package com.gu.conf
 
 import com.amazonaws.auth.AWSCredentialsProvider
-import com.amazonaws.regions.Regions
 import com.amazonaws.services.simplesystemsmanagement.AWSSimpleSystemsManagementClientBuilder
 import com.amazonaws.services.simplesystemsmanagement.model.GetParametersByPathRequest
-import com.gu.AwsIdentity
+import com.gu.{AppIdentity, AwsIdentity}
 import com.typesafe.config.{Config, ConfigFactory}
-import scala.collection.JavaConverters._
+import org.slf4j.LoggerFactory
 
+import scala.collection.JavaConverters._
 import scala.annotation.tailrec
 
 case class SSMConfigurationLocation(
   path: String,
-  region: String = Regions.getCurrentRegion.getName
+  region: String = AppIdentity.region
 ) extends ConfigurationLocation {
 
+  private val logger = LoggerFactory.getLogger(this.getClass)
+
   override def load(credentials: => AWSCredentialsProvider): Config = {
+    logger.info(s"Attempting to load configuration from SSM for path = $path and region = $region")
     val ssmClient = {
       AWSSimpleSystemsManagementClientBuilder
         .standard()
