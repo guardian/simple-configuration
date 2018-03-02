@@ -33,28 +33,26 @@ object AppIdentity {
       None
   }
 
-  private def listTags(instanceId: String, ec2Client: AmazonEC2): Map[String, String] = {
-    val tags = safeAwsOperation(s"Failed to describe the tags of the instance $instanceId") {
-      val result = ec2Client.describeTags(new DescribeTagsRequest().withFilters(
-        new Filter("resource-type").withValues("instance"),
-        new Filter("resource-id").withValues(instanceId)
-      ))
-      result.getTags.asScala.map{td => td.getKey -> td.getValue }.toMap
+  private def fromEC2Tags(credentials: => AWSCredentialsProvider): Option[AppIdentity] = {
+
+    def listTags(instanceId: String, ec2Client: AmazonEC2): Map[String, String] = {
+      val tags = safeAwsOperation(s"Failed to describe the tags of the instance $instanceId") {
+        val result = ec2Client.describeTags(new DescribeTagsRequest().withFilters(
+          new Filter("resource-type").withValues("instance"),
+          new Filter("resource-id").withValues(instanceId)
+        ))
+        result.getTags.asScala.map{td => td.getKey -> td.getValue }.toMap
+      }
+      tags.getOrElse(Map.empty)
     }
-    tags.getOrElse(Map.empty)
-  }
 
-  private def ec2Client(region: Region, credentials: AWSCredentialsProvider): AmazonEC2 = {
-    val builder = AmazonEC2ClientBuilder.standard()
-    builder.setRegion(region.getName)
-    builder.setCredentials(credentials)
-    builder.build()
-  }
+    def ec2Client(region: Region, credentials: AWSCredentialsProvider): AmazonEC2 = {
+      val builder = AmazonEC2ClientBuilder.standard()
+      builder.setRegion(region.getName)
+      builder.setCredentials(credentials)
+      builder.build()
+    }
 
-  def whoAmI(
-    defaultAppName: String,
-    credentials: => AWSCredentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
-  ): AppIdentity = {
     val region = safeAwsOperation("Failed to identify the regionName of the instance")(Regions.getCurrentRegion)
     val tags = for {
       awsRegion <- region
@@ -68,7 +66,7 @@ object AppIdentity {
 
     val allTags = tags.getOrElse(Map.empty)
 
-    val awsIdentity = for {
+    for {
       regionName <- region.map(_.getName)
       app <- allTags.get("App")
       stack <- allTags.get("Stack")
@@ -79,7 +77,37 @@ object AppIdentity {
       stage = stage,
       region = regionName
     )
+  }
 
-    awsIdentity.getOrElse(DevIdentity(defaultAppName))
+  private def fromLambdaEnvVariables(): Option[AppIdentity] = {
+    def getEnv(variableName: String): Option[String] = Option(System.getenv(variableName))
+    for {
+      app <- getEnv("App")
+      stack <- getEnv("Stack")
+      stage <- getEnv("Stage")
+      region <- getEnv("AWS_DEFAULT_REGION")
+    } yield AwsIdentity(
+      app = app,
+      stack = stack,
+      stage = stage,
+      region = region
+    )
+  }
+
+  def region: String = {
+    lazy val ec2Region = safeAwsOperation("Failed to identify the regionName of the instance") {
+      Option(Regions.getCurrentRegion).map(_.getName)
+    }.flatten
+    lazy val lambdaRegion = Option(System.getenv("AWS_DEFAULT_REGION"))
+    lambdaRegion orElse ec2Region getOrElse "eu-west-1"
+  }
+
+  def whoAmI(
+    defaultAppName: String,
+    credentials: => AWSCredentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
+  ): AppIdentity = {
+    val result = fromLambdaEnvVariables orElse fromEC2Tags(credentials) getOrElse DevIdentity(defaultAppName)
+    logger.info(s"Detected the following AppIdentity: $result")
+    result
   }
 }

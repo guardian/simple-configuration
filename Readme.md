@@ -34,9 +34,9 @@ val config = ConfigurationLoader.load(identity) {
 Let's look in detail at what's happening here.
 
 ### AppIdentity.whoAmI (optional)
-The `AppIdentity.whoAmI` function is a helper that will try to identify your application via the tags (`App`, `Stack`, `Stage`) set on the ec2 instance you are running. It will need the appropriate IAM permission to be able to query the ec2 API (see [IAM paragraph below](#iam-permissions))
+The `AppIdentity.whoAmI` function is a helper that will try to identify your application via the tags (`App`, `Stack`, `Stage`) set on the ec2 instance you are running, or via the environment variables you set on your lambda (`App`, `Stack`, `Stage`, and the one provided by AWS `AWS_DEFAULT_REGION`). It will need the appropriate IAM permission to be able to query the ec2 API (see [IAM paragraph below](#iam-permissions))
 
-If you are running your application on an ec2 instance, the function will return an AppIdentity subtype: AwsIdentity defined as follows:
+If you are running your application on an ec2 instance or a lambda, the function will return an AppIdentity subtype: AwsIdentity defined as follows:
 
 ```scala
 case class AwsIdentity(
@@ -47,7 +47,7 @@ case class AwsIdentity(
 ) extends AppIdentity
 ```
 
-If you are not running on an ec2 instance, for instance when testing locally, the function will return an AppIdentity subtype: DevIdentity initialised with the defaultAppName you provided. It is defined as follows:
+If you are not running on an ec2 instance or a lambda - for instance when testing locally - the function will return an AppIdentity subtype: DevIdentity initialised with the defaultAppName you provided. It is defined as follows:
 
 ```scala
 case class DevIdentity(app: String) extends AppIdentity
@@ -87,7 +87,7 @@ def load(
 
 The only parameter you need to provide is the identity, other parameters will use a sensible default.
 
-`identity`: identity is a parameter of type `AppIdentity` that describe your application (name, stack, stage, awsRegion). See [above paragraph](#appidentitywhoami-optional) about AppIdentity.whoAmI
+`identity`: identity is a parameter of type `AppIdentity` that describes your application (name, stack, stage, awsRegion). See [above paragraph](#appidentitywhoami-optional) about AppIdentity.whoAmI
 
 `credentials`: These are the AWS credentials that will be used to load your configuration from S3. The default behaviour should be enough, but if you wanted to customise the way the credentials are picked you could pass it as a parameter. Note that it's a pass-by-name parameter so the content won't be evaluated unless needed. The default behaviour when running locally is to load the configuration from a local file, so credentials won't be evaluated in that case.
 
@@ -173,7 +173,7 @@ This will be useful when loading a file ouside of your classpath. Typically, a c
 This will load a configuration file from within your classpath. Typically a file under the `resource` folder of your project. It is useful if your configuration can be committed in your repo and is directly accessible from the classpath. 
 
 ## IAM permissions
-- if you use `AppIdentity.whoAmI`
+- if you use `AppIdentity.whoAmI` on an ec2 instance. Note that you won't need that for a lambda as these are passed as environment variables
 ```json
 {
     "Effect": "Allow",

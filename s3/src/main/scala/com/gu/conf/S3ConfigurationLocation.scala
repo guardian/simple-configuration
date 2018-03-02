@@ -5,6 +5,7 @@ import com.amazonaws.regions.Regions
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.gu.AwsIdentity
 import com.typesafe.config.{Config, ConfigFactory, ConfigParseOptions}
+import org.slf4j.LoggerFactory
 
 import scala.io.Source
 
@@ -14,7 +15,10 @@ case class S3ConfigurationLocation(
   region: String = Regions.getCurrentRegion.getName
 ) extends ConfigurationLocation {
 
+  private val logger = LoggerFactory.getLogger(this.getClass)
+
   override def load(credentials: => AWSCredentialsProvider): Config = {
+    logger.info(s"Attempting to load configuration from S3 for bucket = $bucket path = $path and region = $region")
     val s3Client = {
       val builder = AmazonS3ClientBuilder.standard()
       builder.setCredentials(credentials)
