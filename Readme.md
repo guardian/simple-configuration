@@ -14,9 +14,9 @@ It relies on [lightbend's configuration library](https://github.com/typesafehub/
 In your `build.sbt`:
 ```scala
 resolvers += "Guardian Platform Bintray" at "https://dl.bintray.com/guardian/platforms"
-libraryDependencies += "com.gu" %% "simple-configuration-s3" % "1.4.0"
+libraryDependencies += "com.gu" %% "simple-configuration-s3" % "1.4.1"
 // OR
-libraryDependencies += "com.gu" %% "simple-configuration-ssm" % "1.4.0"
+libraryDependencies += "com.gu" %% "simple-configuration-ssm" % "1.4.1"
 ```
 
 Then in your code:
