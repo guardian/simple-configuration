@@ -79,8 +79,9 @@ object AppIdentity {
     )
   }
 
+  private def getEnv(variableName: String): Option[String] = Option(System.getenv(variableName))
+
   private def fromLambdaEnvVariables(): Option[AppIdentity] = {
-    def getEnv(variableName: String): Option[String] = Option(System.getenv(variableName))
     for {
       app <- getEnv("App")
       stack <- getEnv("Stack")
@@ -92,6 +93,12 @@ object AppIdentity {
       stage = stage,
       region = region
     )
+  }
+
+  private def fromTeamcityEnvVariables(defaultAppName: String): Option[AppIdentity] = {
+    for {
+      _ <- getEnv("TEAMCITY_VERSION")
+    } yield DevIdentity(defaultAppName)
   }
 
   def region: String = {
@@ -106,7 +113,11 @@ object AppIdentity {
     defaultAppName: String,
     credentials: => AWSCredentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
   ): AppIdentity = {
-    val result = fromLambdaEnvVariables orElse fromEC2Tags(credentials) getOrElse DevIdentity(defaultAppName)
+    val result = fromTeamcityEnvVariables(defaultAppName)
+      .orElse(fromLambdaEnvVariables)
+      .orElse(fromEC2Tags(credentials))
+      .getOrElse(DevIdentity(defaultAppName))
+
     logger.info(s"Detected the following AppIdentity: $result")
     result
   }
