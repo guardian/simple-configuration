@@ -53,7 +53,7 @@ object AppIdentity {
         val describeAutoScalingInstancesResult = asgClient.describeAutoScalingInstances(describeAutoScalingInstancesRequest)
         describeAutoScalingInstancesResult.getAutoScalingInstances.asScala.head.getAutoScalingGroupName
       }
-      val tags = {
+      val tags: Map[String, String] = {
         val describeAutoScalingGroupsRequest = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(autoscalingGroupName)
         val describeAutoScalingGroupsResult = asgClient.describeAutoScalingGroups(describeAutoScalingGroupsRequest)
         val autoScalingGroup = describeAutoScalingGroupsResult.getAutoScalingGroups.asScala.head
