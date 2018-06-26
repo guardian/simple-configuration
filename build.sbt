@@ -4,9 +4,9 @@ name := "simple-configuration"
 organization := "com.gu"
 
 val scala_2_11: String = "2.11.12"
-val scala_2_12: String = "2.12.4"
+val scala_2_12: String = "2.12.6"
 
-val awsSdkVersion = "1.11.282"
+val awsSdkVersion = "1.11.354"
 
 scalaVersion := scala_2_11
 

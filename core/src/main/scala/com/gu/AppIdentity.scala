@@ -36,8 +36,8 @@ object AppIdentity {
   def fromASGTags(credentials: => AWSCredentialsProvider): Option[AwsIdentity] = {
     // We read tags from the AutoScalingGroup rather than the instance itself to avoid problems where the
     // tags have not been applied to the instance before we start up (they are eventually consistent)
-    def withClient[T](f: (AmazonAutoScaling => T)) = {
-      def asgClient: AmazonAutoScaling = AmazonAutoScalingClientBuilder
+    def withOneOffAsgClient[T](f: (AmazonAutoScaling => T)): T = {
+      val asgClient: AmazonAutoScaling = AmazonAutoScalingClientBuilder
         .standard()
         .withRegion(region)
         .withCredentials(credentials)
@@ -67,7 +67,7 @@ object AppIdentity {
       } yield tags
     }
     for {
-      tags <- withClient(getTags)
+      tags <- withOneOffAsgClient(getTags)
       regionName <- safeAwsOperation("Failed to identify the regionName of the instance")(Regions.getCurrentRegion).map(_.getName)
       stack <- tags.get("Stack")
       app <- tags.get("App")
