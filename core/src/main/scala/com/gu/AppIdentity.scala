@@ -33,53 +33,41 @@ object AppIdentity {
       None
   }
 
-  def fromASGTags(credentials: => AWSCredentialsProvider): Option[AwsIdentity] = {
+  def fromASGTags(instanceId: String, credentials: => AWSCredentialsProvider): AwsIdentity = {
     // We read tags from the AutoScalingGroup rather than the instance itself to avoid problems where the
     // tags have not been applied to the instance before we start up (they are eventually consistent)
-    def withOneOffAsgClient[T](f: (AmazonAutoScaling => T)): T = {
+    def withOneOffAsgClient[T](f: AmazonAutoScaling => T): T = {
       val asgClient: AmazonAutoScaling = AmazonAutoScalingClientBuilder
         .standard()
         .withRegion(region)
         .withCredentials(credentials)
         .build()
-
       val returned = f(asgClient)
       asgClient.shutdown()
       returned
     }
-    def getTags(asgClient: AmazonAutoScaling): Option[Map[String, String]] = {
-      def getAutoscalingGroupName(instanceId: String): Option[String] = {
-        val request = new DescribeAutoScalingInstancesRequest().withInstanceIds(instanceId)
-        val response = asgClient.describeAutoScalingInstances(request)
-        val asgInstance = response.getAutoScalingInstances.asScala.headOption
-        asgInstance.map(_.getAutoScalingGroupName)
+
+    def getTags(asgClient: AmazonAutoScaling): Map[String, String] = {
+      val autoscalingGroupName = {
+        val describeAutoScalingInstancesRequest = new DescribeAutoScalingInstancesRequest().withInstanceIds(instanceId)
+        val describeAutoScalingInstancesResult = asgClient.describeAutoScalingInstances(describeAutoScalingInstancesRequest)
+        describeAutoScalingInstancesResult.getAutoScalingInstances.asScala.head.getAutoScalingGroupName
       }
-      def getTags(autoscalingGroupName: String): Option[Map[String, String]] = {
-        val request = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(autoscalingGroupName)
-        val response = asgClient.describeAutoScalingGroups(request)
-        val group = response.getAutoScalingGroups.asScala.headOption
-        group.map(_.getTags.asScala.map { t => t.getKey -> t.getValue }(scala.collection.breakOut))
+      val tags = {
+        val describeAutoScalingGroupsRequest = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(autoscalingGroupName)
+        val describeAutoScalingGroupsResult = asgClient.describeAutoScalingGroups(describeAutoScalingGroupsRequest)
+        val autoScalingGroup = describeAutoScalingGroupsResult.getAutoScalingGroups.asScala.head
+        autoScalingGroup.getTags.asScala.map { t => t.getKey -> t.getValue }(scala.collection.breakOut)
       }
-      for {
-        instanceId <- Option(EC2MetadataUtils.getInstanceId)
-        asg <- getAutoscalingGroupName(instanceId)
-        tags <- getTags(asg)
-      } yield tags
+      tags
     }
-    for {
-      tags <- withOneOffAsgClient(getTags)
-      regionName <- safeAwsOperation("Failed to identify the regionName of the instance")(Regions.getCurrentRegion).map(_.getName)
-      stack <- tags.get("Stack")
-      app <- tags.get("App")
-      stage <- tags.get("Stage")
-    } yield {
-      AwsIdentity(
-        app = app,
-        stack = stack,
-        stage = stage,
-        region = regionName
-      )
-    }
+    val tags = withOneOffAsgClient(getTags)
+    AwsIdentity(
+      app = tags("App"),
+      stack = tags("Stack"),
+      stage = tags("Stage"),
+      region = Regions.getCurrentRegion.getName
+    )
   }
 
 
@@ -118,10 +106,13 @@ object AppIdentity {
               credentials: => AWSCredentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
             ): AppIdentity = {
     val result = fromTeamcityEnvVariables(defaultAppName)
-      .orElse(fromLambdaEnvVariables)
-      .orElse(fromASGTags(credentials))
-      .getOrElse(DevIdentity(defaultAppName))
-
+      .orElse(fromLambdaEnvVariables())
+      .getOrElse({
+        Option(EC2MetadataUtils.getInstanceId) match {
+          case Some(instanceId) => fromASGTags(instanceId, credentials)
+          case _ => DevIdentity(defaultAppName)
+        }
+      })
     logger.info(s"Detected the following AppIdentity: $result")
     result
   }
