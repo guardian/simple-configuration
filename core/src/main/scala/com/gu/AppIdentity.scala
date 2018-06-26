@@ -1,9 +1,9 @@
 package com.gu
 
 import com.amazonaws.auth.{AWSCredentialsProvider, DefaultAWSCredentialsProviderChain}
-import com.amazonaws.regions.{Region, Regions}
-import com.amazonaws.services.ec2.{AmazonEC2, AmazonEC2ClientBuilder}
-import com.amazonaws.services.ec2.model.{DescribeTagsRequest, Filter}
+import com.amazonaws.regions.Regions
+import com.amazonaws.services.autoscaling.model.{DescribeAutoScalingGroupsRequest, DescribeAutoScalingInstancesRequest}
+import com.amazonaws.services.autoscaling.{AmazonAutoScaling, AmazonAutoScalingClientBuilder}
 import com.amazonaws.util.EC2MetadataUtils
 import org.slf4j.LoggerFactory
 
@@ -13,15 +13,15 @@ import scala.util.{Failure, Success, Try}
 sealed trait AppIdentity
 
 case class AwsIdentity(
-  app: String,
-  stack: String,
-  stage: String,
-  region: String
-) extends AppIdentity
+                        app: String,
+                        stack: String,
+                        stage: String,
+                        region: String
+                      ) extends AppIdentity
 
 case class DevIdentity(
-  app: String
-) extends AppIdentity
+                        app: String
+                      ) extends AppIdentity
 
 object AppIdentity {
   private val logger = LoggerFactory.getLogger(this.getClass)
@@ -33,51 +33,55 @@ object AppIdentity {
       None
   }
 
-  private def fromEC2Tags(credentials: => AWSCredentialsProvider): Option[AppIdentity] = {
+  def fromASGTags(credentials: => AWSCredentialsProvider): Option[AwsIdentity] = {
+    // We read tags from the AutoScalingGroup rather than the instance itself to avoid problems where the
+    // tags have not been applied to the instance before we start up (they are eventually consistent)
+    def withClient[T](f: (AmazonAutoScaling => T)) = {
+      def asgClient: AmazonAutoScaling = AmazonAutoScalingClientBuilder
+        .standard()
+        .withRegion(region)
+        .withCredentials(credentials)
+        .build()
 
-    def listTags(instanceId: String, ec2Client: AmazonEC2): Map[String, String] = {
-      val tags = safeAwsOperation(s"Failed to describe the tags of the instance $instanceId") {
-        val result = ec2Client.describeTags(new DescribeTagsRequest().withFilters(
-          new Filter("resource-type").withValues("instance"),
-          new Filter("resource-id").withValues(instanceId)
-        ))
-        result.getTags.asScala.map{td => td.getKey -> td.getValue }.toMap
+      val returned = f(asgClient)
+      asgClient.shutdown()
+      returned
+    }
+    def getTags(asgClient: AmazonAutoScaling): Option[Map[String, String]] = {
+      def getAutoscalingGroupName(instanceId: String): Option[String] = {
+        val request = new DescribeAutoScalingInstancesRequest().withInstanceIds(instanceId)
+        val response = asgClient.describeAutoScalingInstances(request)
+        val asgInstance = response.getAutoScalingInstances.asScala.headOption
+        asgInstance.map(_.getAutoScalingGroupName)
       }
-      tags.getOrElse(Map.empty)
+      def getTags(autoscalingGroupName: String): Option[Map[String, String]] = {
+        val request = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(autoscalingGroupName)
+        val response = asgClient.describeAutoScalingGroups(request)
+        val group = response.getAutoScalingGroups.asScala.headOption
+        group.map(_.getTags.asScala.map { t => t.getKey -> t.getValue }(scala.collection.breakOut))
+      }
+      for {
+        instanceId <- Option(EC2MetadataUtils.getInstanceId)
+        asg <- getAutoscalingGroupName(instanceId)
+        tags <- getTags(asg)
+      } yield tags
     }
-
-    def ec2Client(region: Region, credentials: AWSCredentialsProvider): AmazonEC2 = {
-      val builder = AmazonEC2ClientBuilder.standard()
-      builder.setRegion(region.getName)
-      builder.setCredentials(credentials)
-      builder.build()
-    }
-
-    val region = safeAwsOperation("Failed to identify the regionName of the instance")(Regions.getCurrentRegion)
-    val tags = for {
-      awsRegion <- region
-      client <- safeAwsOperation("Failed to instantiate ec2 client")(ec2Client(awsRegion, credentials))
-      instanceId <- safeAwsOperation("Failed to identify the instanceId")(EC2MetadataUtils.getInstanceId)
-    } yield {
-      val result = listTags(instanceId, client)
-      client.shutdown()
-      result
-    }
-
-    val allTags = tags.getOrElse(Map.empty)
-
     for {
-      regionName <- region.map(_.getName)
-      app <- allTags.get("App")
-      stack <- allTags.get("Stack")
-      stage <- allTags.get("Stage")
-    } yield AwsIdentity(
-      app = app,
-      stack = stack,
-      stage = stage,
-      region = regionName
-    )
+      tags <- withClient(getTags)
+      regionName <- safeAwsOperation("Failed to identify the regionName of the instance")(Regions.getCurrentRegion).map(_.getName)
+      stack <- tags.get("Stack")
+      app <- tags.get("App")
+      stage <- tags.get("Stage")
+    } yield {
+      AwsIdentity(
+        app = app,
+        stack = stack,
+        stage = stage,
+        region = regionName
+      )
+    }
   }
+
 
   private def getEnv(variableName: String): Option[String] = Option(System.getenv(variableName))
 
@@ -110,12 +114,12 @@ object AppIdentity {
   }
 
   def whoAmI(
-    defaultAppName: String,
-    credentials: => AWSCredentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
-  ): AppIdentity = {
+              defaultAppName: String,
+              credentials: => AWSCredentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
+            ): AppIdentity = {
     val result = fromTeamcityEnvVariables(defaultAppName)
       .orElse(fromLambdaEnvVariables)
-      .orElse(fromEC2Tags(credentials))
+      .orElse(fromASGTags(credentials))
       .getOrElse(DevIdentity(defaultAppName))
 
     logger.info(s"Detected the following AppIdentity: $result")

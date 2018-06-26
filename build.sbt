@@ -41,6 +41,7 @@ val core = project
     name := "simple-configuration-core",
     libraryDependencies ++= Seq(
       "com.amazonaws" % "aws-java-sdk-ec2" % awsSdkVersion,
+      "com.amazonaws" % "aws-java-sdk-autoscaling" % awsSdkVersion,
       "com.typesafe" % "config" % "1.3.3",
       "org.slf4j" % "slf4j-api" % "1.7.25"
     )
