@@ -48,19 +48,17 @@ object AppIdentity {
     }
 
     def getTags(asgClient: AmazonAutoScaling): Map[String, String] = {
-      val autoscalingGroupName = {
-        val describeAutoScalingInstancesRequest = new DescribeAutoScalingInstancesRequest().withInstanceIds(instanceId)
-        val describeAutoScalingInstancesResult = asgClient.describeAutoScalingInstances(describeAutoScalingInstancesRequest)
-        describeAutoScalingInstancesResult.getAutoScalingInstances.asScala.head.getAutoScalingGroupName
-      }
-      val tags: Map[String, String] = {
-        val describeAutoScalingGroupsRequest = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(autoscalingGroupName)
-        val describeAutoScalingGroupsResult = asgClient.describeAutoScalingGroups(describeAutoScalingGroupsRequest)
-        val autoScalingGroup = describeAutoScalingGroupsResult.getAutoScalingGroups.asScala.head
-        autoScalingGroup.getTags.asScala.map { t => t.getKey -> t.getValue }(scala.collection.breakOut)
-      }
-      tags
+      val describeAutoScalingInstancesRequest = new DescribeAutoScalingInstancesRequest().withInstanceIds(instanceId)
+      val describeAutoScalingInstancesResult = asgClient.describeAutoScalingInstances(describeAutoScalingInstancesRequest)
+      val autoScalingGroupName = describeAutoScalingInstancesResult.getAutoScalingInstances.asScala.head.getAutoScalingGroupName
+
+      val describeAutoScalingGroupsRequest = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(autoScalingGroupName)
+      val describeAutoScalingGroupsResult = asgClient.describeAutoScalingGroups(describeAutoScalingGroupsRequest)
+      val autoScalingGroup = describeAutoScalingGroupsResult.getAutoScalingGroups.asScala.head
+
+      autoScalingGroup.getTags.asScala.map { t => t.getKey -> t.getValue }(scala.collection.breakOut)
     }
+
     val tags = withOneOffAsgClient(getTags)
     AwsIdentity(
       app = tags("App"),
