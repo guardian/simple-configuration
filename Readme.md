@@ -177,7 +177,10 @@ This will load a configuration file from within your classpath. Typically a file
 ```json
 {
     "Effect": "Allow",
-    "Action": "ec2:DescribeTags",
+    "Action": [ 
+      "autoscaling:DescribeAutoScalingInstances",
+      "autoscaling:DescribeAutoScalingGroups"
+    ],
     "Resource": "*"
 }
 ```
