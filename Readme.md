@@ -164,7 +164,7 @@ This will help `ConfigurationLoader.load` locate the file on an S3 bucket. You m
 
 ### SSMConfigurationLocation
 This will help `ConfigurationLoader.load` select all the parameters in the SSM parameter store. The path must start with a / and should not finish with one. Here's a path example `"/this/is/valid"`.
-Parameters are expected to be encrypted and named following this convention: `"/path/my.typesafe.config.key"`. Here's an example: `/PROD/mobile/mobile-fronts/apis.capi.timeout`
+Parameters can be encrypted and are named following this convention: `"/path/my.typesafe.config.key"`. Here's an example: `/PROD/mobile/mobile-fronts/apis.capi.timeout`
 
 ### FileConfigurationLocation
 This will be useful when loading a file ouside of your classpath. Typically, a configuration that can contain secrets and that shouldn't be committed on the repository. This is used by default when in DEV mode and points to `~/.gu/${identity.app}.conf`
