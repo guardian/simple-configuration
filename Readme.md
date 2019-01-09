@@ -179,7 +179,8 @@ This will load a configuration file from within your classpath. Typically a file
     "Effect": "Allow",
     "Action": [ 
       "autoscaling:DescribeAutoScalingInstances",
-      "autoscaling:DescribeAutoScalingGroups"
+      "autoscaling:DescribeAutoScalingGroups",
+      "ec2:DescribeTags"
     ],
     "Resource": "*"
 }
