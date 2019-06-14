@@ -16,3 +16,12 @@ case class FileConfigurationLocation(file: File) extends ConfigurationLocation {
 case class ResourceConfigurationLocation(resourceName: String) extends ConfigurationLocation {
   override def load(credentials: => AWSCredentialsProvider): Config = ConfigFactory.parseResources(resourceName)
 }
+
+case class ComposedConfigurationLocation(locations: List[ConfigurationLocation]) extends ConfigurationLocation {
+  override def load(credentials: => AWSCredentialsProvider): Config = {
+    val aggregatedConfig = locations.map(_.load(credentials)).foldLeft(ConfigFactory.empty()) {
+      case (agg, loadedConfig) => agg.withFallback(loadedConfig)
+    }
+    aggregatedConfig.resolve()
+  }
+}
