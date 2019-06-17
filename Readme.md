@@ -172,6 +172,9 @@ This will be useful when loading a file ouside of your classpath. Typically, a c
 ### ResourceConfigurationLocation
 This will load a configuration file from within your classpath. Typically a file under the `resource` folder of your project. It is useful if your configuration can be committed in your repo and is directly accessible from the classpath. 
 
+### ComposedConfigurationLocation
+Composes a list of `ConfigurationLocation`s. Configurations earlier in the list take precedence over ones later in the list.
+
 ## IAM permissions
 - if you use `AppIdentity.whoAmI` on an ec2 instance. Note that you won't need that for a lambda as these are passed as environment variables
 ```json
