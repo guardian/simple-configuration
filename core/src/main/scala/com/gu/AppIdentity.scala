@@ -56,7 +56,7 @@ object AppIdentity {
       val describeAutoScalingGroupsResult = asgClient.describeAutoScalingGroups(describeAutoScalingGroupsRequest)
       val autoScalingGroup = describeAutoScalingGroupsResult.getAutoScalingGroups.asScala.head
 
-      autoScalingGroup.getTags.asScala.map { t => t.getKey -> t.getValue }(scala.collection.breakOut)
+      autoScalingGroup.getTags.asScala.map { t => t.getKey -> t.getValue }.toMap
     }
 
     val tags = withOneOffAsgClient(getTags)
