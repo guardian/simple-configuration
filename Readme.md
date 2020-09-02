@@ -5,18 +5,18 @@
 _A configuration library without any magic_
 
 ## Goal
-This library will help you load the configuration of your application from s3 or the ssm parameter store.
+This library will help you load the configuration of your application from S3 or the SSM parameter store.
 
-It relies on [lightbend's configuration library](https://github.com/typesafehub/config), AWS' s3 sdk, ssm sdk and ec2 sdk.
+It relies on [lightbend's configuration library](https://github.com/typesafehub/config), AWS' S3 SDK, SSM SDK and EC2 SDK.
 
 ## Usage
 
 In your `build.sbt`:
 ```scala
 resolvers += "Guardian Platform Bintray" at "https://dl.bintray.com/guardian/platforms"
-libraryDependencies += "com.gu" %% "simple-configuration-s3" % "1.4.1"
+libraryDependencies += "com.gu" %% "simple-configuration-s3" % "1.5.2"
 // OR
-libraryDependencies += "com.gu" %% "simple-configuration-ssm" % "1.4.1"
+libraryDependencies += "com.gu" %% "simple-configuration-ssm" % "1.5.2"
 ```
 
 Then in your code:
@@ -59,9 +59,9 @@ You can optionally provide your [own AWS credentials](#examples) rather than rel
 
 ```scala
 def whoAmI(
-    defaultAppName: String,
-    credentials: => AWSCredentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
-  ): AppIdentity
+  defaultAppName: String,
+  credentials: => AWSCredentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
+): AppIdentity
 ```
 
 ### ConfigurationLoader.load
@@ -75,14 +75,14 @@ By default the configuration are loaded from the following locations:
 
 `s3://${identity.app}-dist/${identity.stage}/${identity.stack}/${identity.app}/${identity.app}.conf` once running on an EC2 instance or
 
-`/${identity.stage}/${identity.stack}/${identity.app}/*` if you're loading it form the SSM parameter store
+`/${identity.stage}/${identity.stack}/${identity.app}/*` if you're loading it from the SSM parameter store
 
 `ConfigurationLoader.load` is defined like that:
 ```scala
 def load(
-    identity: AppIdentity,
-    credentials: => AWSCredentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
-  )(locationFunction: PartialFunction[AppIdentity, ConfigurationLocation] = PartialFunction.empty): Config
+  identity: AppIdentity,
+  credentials: => AWSCredentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
+)(locationFunction: PartialFunction[AppIdentity, ConfigurationLocation] = PartialFunction.empty): Config
 ```
 
 The only parameter you need to provide is the identity, other parameters will use a sensible default.
@@ -95,7 +95,7 @@ The only parameter you need to provide is the identity, other parameters will us
 
 ## Examples
 
-**provide your own credentials**
+### Provide your own credentials
 ```scala
 val identity = AppIdentity.whoAmI(defaultAppName = "mobile-apps-api", credentials = myOwnCredentials)
 val config = ConfigurationLoader.load(identity, credentials = myOwnCredentials) {
@@ -103,7 +103,7 @@ val config = ConfigurationLoader.load(identity, credentials = myOwnCredentials) 
 }
 ```
 
-**custom s3 location**
+### Custom S3 location
 See [Location Types](#location-types) for a list of all the location types.
 
 ```scala
@@ -113,7 +113,7 @@ val config = ConfigurationLoader.load(identity) {
 }
 ```
 
-**custom ssm location**
+### Custom SSM location
 See [Location Types](#location-types) for a list of all the location types.
 
 ```scala
@@ -123,7 +123,7 @@ val config = ConfigurationLoader.load(identity) {
 }
 ```
 
-**Play application with Compile time Dependency Injection**
+### Play application with Compile time Dependency Injection
 ```scala
 import play.api.Configuration
 import com.gu.AppIdentity
@@ -152,12 +152,13 @@ Here's what we're doing above:
 
 ## Location types
 
-When providing your own mapping between `AppIdentity` and location, you can specify four location types:
+When providing your own mapping between `AppIdentity` and location, you can specify five location types:
 
 - `S3ConfigurationLocation(bucket: String, path: String, region: String)`
 - `SSMConfigurationLocation(path: String, region: String)`
 - `FileConfigurationLocation(file: File)`
 - `ResourceConfigurationLocation(resourceName: String)`
+- `ComposedConfigurationLocation(locations: List[ConfigurationLocation])`
 
 ### S3ConfigurationLocation
 This will help `ConfigurationLoader.load` locate the file on an S3 bucket. You must provide the bucket name and the complete path to the file. The region defaults to the autodetected one, but you can override it if you please. The file fetched from S3 is expected to be a valid typesafe config file (HOCON, json or properties)
@@ -167,16 +168,17 @@ This will help `ConfigurationLoader.load` select all the parameters in the SSM p
 Parameters can be encrypted and are named following this convention: `"/path/my.typesafe.config.key"`. Here's an example: `/PROD/mobile/mobile-fronts/apis.capi.timeout`
 
 ### FileConfigurationLocation
-This will be useful when loading a file ouside of your classpath. Typically, a configuration that can contain secrets and that shouldn't be committed on the repository. This is used by default when in DEV mode and points to `~/.gu/${identity.app}.conf`
+This will be useful when loading a file ouside of your classpath. Typically, a configuration that can contain secrets and that shouldn't be committed to the repository. This is used by default when in DEV mode and points to `~/.gu/${identity.app}.conf`
 
 ### ResourceConfigurationLocation
-This will load a configuration file from within your classpath. Typically a file under the `resource` folder of your project. It is useful if your configuration can be committed in your repo and is directly accessible from the classpath. 
+This will load a configuration file from within your classpath. Typically a file under the `resource` folder of your project. It is useful if your configuration can be committed to your repo and is directly accessible from the classpath. 
 
 ### ComposedConfigurationLocation
 Composes a list of `ConfigurationLocation`s. Configurations earlier in the list take precedence over ones later in the list.
 
 ## IAM permissions
-- if you use `AppIdentity.whoAmI` on an ec2 instance. Note that you won't need that for a lambda as these are passed as environment variables
+### When using AppIdentity.whoAmI on an EC2 instance
+_Note that you won't need it for a lambda as these are passed as environment variables_
 ```json
 {
     "Effect": "Allow",
@@ -188,7 +190,7 @@ Composes a list of `ConfigurationLocation`s. Configurations earlier in the list 
     "Resource": "*"
 }
 ```
-- for `ConfigurationLoader.load` when using S3
+### When loading the configuration from S3
 ```json
 {
     "Effect": "Allow",
@@ -196,7 +198,7 @@ Composes a list of `ConfigurationLocation`s. Configurations earlier in the list 
     "Resource": "arn:aws:s3:::mybucket/*"
 }
 ```
-- for `ConfigurationLoader.load` when using SSM
+### When loading the configuration from SSM
 ```json
 {
     "Effect": "Allow",
