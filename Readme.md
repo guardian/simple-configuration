@@ -22,11 +22,12 @@ libraryDependencies += "com.gu" %% "simple-configuration-ssm" % "1.5.2"
 Then in your code:
 
 ```scala
-import com.gu.AppIdentity
-import com.gu.conf.ConfigurationLoader
+import com.gu.{AppIdentity, AwsIdentity}
+import com.gu.conf.{ConfigurationLoader, S3ConfigurationLocation}
+import com.typesafe.config.Config
 
 val identity = AppIdentity.whoAmI(defaultAppName = "mobile-apps-api")
-val config = ConfigurationLoader.load(identity) {
+val config: Config = ConfigurationLoader.load(identity) {
   case identity: AwsIdentity => S3ConfigurationLocation.default(identity)
 }
 ```
