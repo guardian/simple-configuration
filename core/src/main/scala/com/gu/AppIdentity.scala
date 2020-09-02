@@ -33,7 +33,7 @@ object AppIdentity {
       None
   }
 
-  def fromASGTags(instanceId: String, credentials: => AWSCredentialsProvider): AwsIdentity = {
+  private def fromASGTags(credentials: => AWSCredentialsProvider): Option[AwsIdentity] = {
     // We read tags from the AutoScalingGroup rather than the instance itself to avoid problems where the
     // tags have not been applied to the instance before we start up (they are eventually consistent)
     def withOneOffAsgClient[T](f: AmazonAutoScaling => T): T = {
@@ -47,7 +47,7 @@ object AppIdentity {
       returned
     }
 
-    def getTags(asgClient: AmazonAutoScaling): Map[String, String] = {
+    def getTags(asgClient: AmazonAutoScaling, instanceId: String): Map[String, String] = {
       val describeAutoScalingInstancesRequest = new DescribeAutoScalingInstancesRequest().withInstanceIds(instanceId)
       val describeAutoScalingInstancesResult = asgClient.describeAutoScalingInstances(describeAutoScalingInstancesRequest)
       val autoScalingGroupName = describeAutoScalingInstancesResult.getAutoScalingInstances.asScala.head.getAutoScalingGroupName
@@ -59,13 +59,15 @@ object AppIdentity {
       autoScalingGroup.getTags.asScala.map { t => t.getKey -> t.getValue }.toMap
     }
 
-    val tags = withOneOffAsgClient(getTags)
-    AwsIdentity(
-      app = tags("App"),
-      stack = tags("Stack"),
-      stage = tags("Stage"),
-      region = Regions.getCurrentRegion.getName
-    )
+    Option(EC2MetadataUtils.getInstanceId).map { instanceId =>
+      val tags = withOneOffAsgClient(client => getTags(client, instanceId))
+      AwsIdentity(
+        app = tags("App"),
+        stack = tags("Stack"),
+        stage = tags("Stage"),
+        region = Regions.getCurrentRegion.getName
+      )
+    }
   }
 
 
@@ -105,12 +107,8 @@ object AppIdentity {
             ): AppIdentity = {
     val result = fromTeamcityEnvVariables(defaultAppName)
       .orElse(fromLambdaEnvVariables())
-      .getOrElse({
-        Option(EC2MetadataUtils.getInstanceId) match {
-          case Some(instanceId) => fromASGTags(instanceId, credentials)
-          case _ => DevIdentity(defaultAppName)
-        }
-      })
+      .orElse(fromASGTags(credentials))
+      .getOrElse(DevIdentity(defaultAppName))
     logger.info(s"Detected the following AppIdentity: $result")
     result
   }
