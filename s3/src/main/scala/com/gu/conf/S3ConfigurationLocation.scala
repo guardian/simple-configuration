@@ -1,42 +1,53 @@
 package com.gu.conf
 
-import com.amazonaws.auth.AWSCredentialsProvider
-import com.amazonaws.regions.Regions
-import com.amazonaws.services.s3.AmazonS3ClientBuilder
+import java.nio.charset.StandardCharsets.UTF_8
+
 import com.gu.AwsIdentity
 import com.typesafe.config.{Config, ConfigFactory, ConfigParseOptions}
 import org.slf4j.LoggerFactory
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.regions.internal.util.EC2MetadataUtils
+import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.model.GetObjectRequest
 
-import scala.io.Source
-
-case class S3ConfigurationLocation(
-  bucket: String,
-  path: String,
-  region: String = Regions.getCurrentRegion.getName
-) extends ConfigurationLocation {
+case class S3ConfigurationLocation(bucket: String,
+                                   path: String,
+                                   region: String =
+                                     EC2MetadataUtils.getEC2InstanceRegion)
+    extends ConfigurationLocation {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def load(credentials: => AWSCredentialsProvider): Config = {
-    logger.info(s"Attempting to load configuration from S3 for bucket = $bucket path = $path and region = $region")
-    val s3Client = {
-      val builder = AmazonS3ClientBuilder.standard()
-      builder.setCredentials(credentials)
-      builder.setRegion(region)
-      builder.build()
-    }
+  override def load(credentials: => AwsCredentialsProvider): Config = {
+    logger.info(
+      s"Attempting to load configuration from S3 for bucket = $bucket path = $path and region = $region"
+    )
+    val s3Client = S3Client.builder
+      .credentialsProvider(credentials)
+      .region(Region.of(region))
+      .build()
 
-    val s3Object = s3Client.getObject(bucket, path)
-    val content = Source.fromInputStream(s3Object.getObjectContent).mkString
+    val content = s3Client
+      .getObjectAsBytes(
+        GetObjectRequest.builder.bucket(bucket).key(path).build()
+      )
+      .asString(UTF_8)
 
-    s3Client.shutdown()
+    s3Client.close()
 
-    ConfigFactory.parseString(content, ConfigParseOptions.defaults().setOriginDescription(s"s3://$bucket/$path"))
+    ConfigFactory.parseString(
+      content,
+      ConfigParseOptions.defaults().setOriginDescription(s"s3://$bucket/$path")
+    )
   }
 }
 
 object S3ConfigurationLocation {
   def default(identity: AwsIdentity): ConfigurationLocation = {
-    S3ConfigurationLocation(s"${identity.app}-dist", s"${identity.stage}/${identity.stack}/${identity.app}/${identity.app}.conf")
+    S3ConfigurationLocation(
+      s"${identity.app}-dist",
+      s"${identity.stage}/${identity.stack}/${identity.app}/${identity.app}.conf"
+    )
   }
 }
