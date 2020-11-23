@@ -15,7 +15,9 @@ val sharedSettings = Seq(
   scalaVersion := scala_2_11,
   crossScalaVersions := Seq(scala_2_11, scala_2_12, scala_2_13),
   releaseCrossBuild := true,
-  licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html")),
+  licenses += ("Apache-2.0", url(
+    "http://www.apache.org/licenses/LICENSE-2.0.html"
+  )),
   organization := "com.gu",
   bintrayOrganization := Some("guardian"),
   bintrayRepository := "platforms",
@@ -43,7 +45,7 @@ val core = project
     libraryDependencies ++= Seq(
       "com.amazonaws" % "aws-java-sdk-ec2" % awsSdkVersion,
       "com.amazonaws" % "aws-java-sdk-autoscaling" % awsSdkVersion,
-      "com.typesafe" % "config" % "1.4.0",
+      "com.typesafe" % "config" % "1.4.1",
       "org.slf4j" % "slf4j-api" % "1.7.30"
     )
   )
@@ -68,11 +70,11 @@ val ssm = project
     )
   )
 
-lazy val root = project.in(file("."))
+lazy val root = project
+  .in(file("."))
   .aggregate(core, s3, ssm)
   .settings(
     publish := {},
     releaseCrossBuild := true,
     crossScalaVersions := Seq(scala_2_11, scala_2_12, scala_2_13)
   )
-
