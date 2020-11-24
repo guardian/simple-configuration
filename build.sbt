@@ -4,8 +4,8 @@ name := "simple-configuration"
 organization := "com.gu"
 
 val scala_2_11: String = "2.11.12"
-val scala_2_12: String = "2.12.11"
-val scala_2_13: String = "2.13.2"
+val scala_2_12: String = "2.12.12"
+val scala_2_13: String = "2.13.4"
 
 val awsSdkVersion = "2.15.33"
 
@@ -46,7 +46,7 @@ val core = project
     libraryDependencies ++= Seq(
       "software.amazon.awssdk" % "ec2" % awsSdkVersion,
       "software.amazon.awssdk" % "autoscaling" % awsSdkVersion,
-      "com.typesafe" % "config" % "1.4.0",
+      "com.typesafe" % "config" % "1.4.1",
       "org.slf4j" % "slf4j-api" % "1.7.30"
     )
   )
