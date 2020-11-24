@@ -4,8 +4,8 @@ name := "simple-configuration"
 organization := "com.gu"
 
 val scala_2_11: String = "2.11.12"
-val scala_2_12: String = "2.12.11"
-val scala_2_13: String = "2.13.2"
+val scala_2_12: String = "2.12.12"
+val scala_2_13: String = "2.13.4"
 
 val awsSdkVersion = "1.11.772"
 
@@ -15,7 +15,9 @@ val sharedSettings = Seq(
   scalaVersion := scala_2_11,
   crossScalaVersions := Seq(scala_2_11, scala_2_12, scala_2_13),
   releaseCrossBuild := true,
-  licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html")),
+  licenses += ("Apache-2.0", url(
+    "http://www.apache.org/licenses/LICENSE-2.0.html"
+  )),
   organization := "com.gu",
   bintrayOrganization := Some("guardian"),
   bintrayRepository := "platforms",
@@ -68,11 +70,11 @@ val ssm = project
     )
   )
 
-lazy val root = project.in(file("."))
+lazy val root = project
+  .in(file("."))
   .aggregate(core, s3, ssm)
   .settings(
     publish := {},
     releaseCrossBuild := true,
     crossScalaVersions := Seq(scala_2_11, scala_2_12, scala_2_13)
   )
-
