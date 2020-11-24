@@ -11,24 +11,22 @@ import software.amazon.awssdk.services.ssm.model.GetParametersByPathRequest
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
-case class SSMConfigurationLocation(path: String,
-                                    region: String = AppIdentity.region)
-    extends ConfigurationLocation {
+case class SSMConfigurationLocation(
+  path: String,
+  region: String = AppIdentity.region
+) extends ConfigurationLocation {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
   override def load(credentials: => AwsCredentialsProvider): Config = {
-    logger.info(
-      s"Attempting to load configuration from SSM for path = $path and region = $region"
-    )
+    logger.info(s"Attempting to load configuration from SSM for path = $path and region = $region")
     val ssmClient = SsmClient.builder
       .credentialsProvider(credentials)
       .region(Region.of(region))
       .build()
 
     @tailrec
-    def recursiveParamFetch(parameters: Map[String, String],
-                            nextToken: Option[String]): Map[String, String] = {
+    def recursiveParamFetch(parameters: Map[String, String], nextToken: Option[String]): Map[String, String] = {
 
       val parameterRequest = GetParametersByPathRequest.builder
         .withDecryption(true)
@@ -44,8 +42,7 @@ case class SSMConfigurationLocation(path: String,
       }.toMap
 
       Option(result.nextToken) match {
-        case Some(next) =>
-          recursiveParamFetch(parameters ++ results, Some(next))
+        case Some(next) => recursiveParamFetch(parameters ++ results, Some(next))
         case None => parameters ++ results
       }
     }
@@ -60,8 +57,6 @@ case class SSMConfigurationLocation(path: String,
 
 object SSMConfigurationLocation {
   def default(identity: AwsIdentity): ConfigurationLocation = {
-    SSMConfigurationLocation(
-      s"/${identity.stage}/${identity.stack}/${identity.app}"
-    )
+    SSMConfigurationLocation(s"/${identity.stage}/${identity.stack}/${identity.app}")
   }
 }

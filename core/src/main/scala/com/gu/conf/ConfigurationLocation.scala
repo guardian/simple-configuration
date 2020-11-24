@@ -10,23 +10,18 @@ trait ConfigurationLocation {
 }
 
 case class FileConfigurationLocation(file: File) extends ConfigurationLocation {
-  override def load(credentials: => AwsCredentialsProvider): Config =
-    ConfigFactory.parseFile(file)
+  override def load(credentials: => AwsCredentialsProvider): Config = ConfigFactory.parseFile(file)
 }
 
-case class ResourceConfigurationLocation(resourceName: String)
-    extends ConfigurationLocation {
-  override def load(credentials: => AwsCredentialsProvider): Config =
-    ConfigFactory.parseResources(resourceName)
+case class ResourceConfigurationLocation(resourceName: String) extends ConfigurationLocation {
+  override def load(credentials: => AwsCredentialsProvider): Config = ConfigFactory.parseResources(resourceName)
 }
 
-case class ComposedConfigurationLocation(locations: List[ConfigurationLocation])
-    extends ConfigurationLocation {
+case class ComposedConfigurationLocation(locations: List[ConfigurationLocation]) extends ConfigurationLocation {
   override def load(credentials: => AwsCredentialsProvider): Config = {
-    val aggregatedConfig =
-      locations.map(_.load(credentials)).foldLeft(ConfigFactory.empty()) {
-        case (agg, loadedConfig) => agg.withFallback(loadedConfig)
-      }
+    val aggregatedConfig = locations.map(_.load(credentials)).foldLeft(ConfigFactory.empty()) {
+      case (agg, loadedConfig) => agg.withFallback(loadedConfig)
+    }
     aggregatedConfig.resolve()
   }
 }

@@ -14,9 +14,7 @@ object ConfigurationLoader {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  private def defaultDevLocation(
-    identity: DevIdentity
-  ): ConfigurationLocation = {
+  private def defaultDevLocation(identity: DevIdentity): ConfigurationLocation = {
     val home = System.getProperty("user.home")
     FileConfigurationLocation(new File(s"$home/.gu/${identity.app}.conf"))
   }
@@ -24,12 +22,10 @@ object ConfigurationLoader {
   def load(
     identity: AppIdentity,
     credentials: => AwsCredentialsProvider = DefaultCredentialsProvider.create()
-  )(locationFunction: PartialFunction[AppIdentity, ConfigurationLocation] =
-      PartialFunction.empty): Config = {
-    val getLocation =
-      locationFunction.orElse[AppIdentity, ConfigurationLocation] {
-        case devIdentity: DevIdentity => defaultDevLocation(devIdentity)
-      }
+  )(locationFunction: PartialFunction[AppIdentity, ConfigurationLocation] = PartialFunction.empty): Config = {
+    val getLocation = locationFunction.orElse[AppIdentity, ConfigurationLocation] {
+      case devIdentity: DevIdentity => defaultDevLocation(devIdentity)
+    }
 
     logger.info(s"Fetching configuration for $identity")
 
