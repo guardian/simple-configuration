@@ -2,10 +2,13 @@ package com.gu.conf
 
 import java.io.File
 
-import com.amazonaws.auth.{AWSCredentialsProvider, DefaultAWSCredentialsProviderChain}
 import com.gu.{AppIdentity, DevIdentity}
 import com.typesafe.config.Config
 import org.slf4j.LoggerFactory
+import software.amazon.awssdk.auth.credentials.{
+  AwsCredentialsProvider,
+  DefaultCredentialsProvider
+}
 
 object ConfigurationLoader {
 
@@ -18,7 +21,7 @@ object ConfigurationLoader {
 
   def load(
     identity: AppIdentity,
-    credentials: => AWSCredentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
+    credentials: => AwsCredentialsProvider = DefaultCredentialsProvider.create()
   )(locationFunction: PartialFunction[AppIdentity, ConfigurationLocation] = PartialFunction.empty): Config = {
     val getLocation = locationFunction.orElse[AppIdentity, ConfigurationLocation] {
       case devIdentity: DevIdentity => defaultDevLocation(devIdentity)
