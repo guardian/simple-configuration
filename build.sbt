@@ -11,8 +11,8 @@ val awsSdkVersion = "2.16.7"
 
 scalaVersion := scala_2_11
 
-publishTo in ThisBuild := Some(Resolver.file("local-ivy", file("$HOME/.ivy2/local")))
-//publishTo in ThisBuild := sonatypePublishToBundle.value
+//publishTo in ThisBuild := Some(Resolver.file("local-ivy", file("$HOME/.ivy2/local")))
+publishTo in ThisBuild := sonatypePublishToBundle.value
 
 val sharedSettings = Seq(
   scalaVersion := scala_2_11,
