@@ -11,6 +11,8 @@ val awsSdkVersion = "2.16.7"
 
 scalaVersion := scala_2_11
 
+publishTo in ThisBuild := Some(Resolver.file("local-ivy", file("$HOME/.ivy2/local")))
+
 val sharedSettings = Seq(
   scalaVersion := scala_2_11,
   scalacOptions += "-target:jvm-1.8",
@@ -21,7 +23,6 @@ val sharedSettings = Seq(
   )),
   organization := "com.gu",
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
-  publishTo := Some(Resolver.file("local-ivy", file("$HOME/.ivy2/local"))),
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
