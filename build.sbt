@@ -21,6 +21,7 @@ val sharedSettings = Seq(
   )),
   organization := "com.gu",
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+  publishTo := Some(Resolver.file("local-ivy", file("$HOME/.ivy2/local"))),
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
