@@ -20,8 +20,6 @@ val sharedSettings = Seq(
     "http://www.apache.org/licenses/LICENSE-2.0.html"
   )),
   organization := "com.gu",
-  bintrayOrganization := Some("guardian"),
-  bintrayRepository := "platforms",
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
@@ -32,7 +30,6 @@ val sharedSettings = Seq(
     commitReleaseVersion,
     tagRelease,
     publishArtifacts,
-    releaseStepTask(bintrayRelease),
     setNextVersion,
     commitNextVersion,
     pushChanges

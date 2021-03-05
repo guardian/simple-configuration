@@ -13,7 +13,6 @@ It relies on [lightbend's configuration library](https://github.com/typesafehub/
 
 In your `build.sbt`:
 ```scala
-resolvers += "Guardian Platform Bintray" at "https://dl.bintray.com/guardian/platforms"
 libraryDependencies += "com.gu" %% "simple-configuration-s3" % "1.5.2"
 // OR
 libraryDependencies += "com.gu" %% "simple-configuration-ssm" % "1.5.2"
