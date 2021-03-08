@@ -11,6 +11,8 @@ val awsSdkVersion = "2.16.7"
 
 scalaVersion := scala_2_11
 
+publishTo in ThisBuild := sonatypePublishToBundle.value
+
 val sharedSettings = Seq(
   scalaVersion := scala_2_11,
   scalacOptions += "-target:jvm-1.8",
@@ -20,8 +22,6 @@ val sharedSettings = Seq(
     "http://www.apache.org/licenses/LICENSE-2.0.html"
   )),
   organization := "com.gu",
-  bintrayOrganization := Some("guardian"),
-  bintrayRepository := "platforms",
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
@@ -32,7 +32,6 @@ val sharedSettings = Seq(
     commitReleaseVersion,
     tagRelease,
     publishArtifacts,
-    releaseStepTask(bintrayRelease),
     setNextVersion,
     commitNextVersion,
     pushChanges
