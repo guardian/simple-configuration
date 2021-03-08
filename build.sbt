@@ -1,7 +1,22 @@
 import ReleaseTransformations._
 
 name := "simple-configuration"
-organization := "com.gu"
+
+ThisBuild / scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/guardian/simple-configuration"),
+    "scm:git@github.com:guardian/simple-configuration.git"
+  )
+)
+
+ThisBuild / homepage := Some(url("https://github.com/guardian/simple-configuration"))
+
+ThisBuild / developers := List(Developer(
+  id = "Guardian",
+  name = "Guardian",
+  email = null,
+  url = url("https://github.com/guardian")
+))
 
 val scala_2_11: String = "2.11.12"
 val scala_2_12: String = "2.12.12"
@@ -31,7 +46,8 @@ val sharedSettings = Seq(
     setReleaseVersion,
     commitReleaseVersion,
     tagRelease,
-    publishArtifacts,
+    releaseStepCommandAndRemaining("+publishSigned"),
+    releaseStepCommand("sonatypeBundleRelease"),
     setNextVersion,
     commitNextVersion,
     pushChanges
