@@ -1,19 +1,14 @@
 package com.gu
 
 import org.slf4j.LoggerFactory
-import software.amazon.awssdk.auth.credentials.{
-  AwsCredentialsProvider,
-  DefaultCredentialsProvider
-}
+import software.amazon.awssdk.auth.credentials.{AwsCredentialsProvider, DefaultCredentialsProvider}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.internal.util.EC2MetadataUtils
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient
-import software.amazon.awssdk.services.autoscaling.model.{
-  DescribeAutoScalingGroupsRequest,
-  DescribeAutoScalingInstancesRequest
-}
+import software.amazon.awssdk.services.autoscaling.model.{DescribeAutoScalingGroupsRequest, DescribeAutoScalingInstancesRequest}
 
 import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 sealed trait AppIdentity
@@ -67,14 +62,21 @@ object AppIdentity {
       autoScalingGroup.tags.asScala.map { t => t.key -> t.value }.toMap
     }
 
-    Option(EC2MetadataUtils.getInstanceId).map { instanceId =>
-      val tags = withOneOffAsgClient(client => getTags(client, instanceId))
-      AwsIdentity(
-        app = tags("App"),
-        stack = tags("Stack"),
-        stage = tags("Stage"),
-        region = EC2MetadataUtils.getEC2InstanceRegion
-      )
+    // Historically `getInstanceId` would return null if metadata service is unavailable (hence the Option), but
+    // this has changed and now throws an exception instead. So for safety we still handle all possibilities.
+    Try(Option(EC2MetadataUtils.getInstanceId)) match {
+      case Success(Some(instanceId)) =>
+        val tags = withOneOffAsgClient(client => getTags(client, instanceId))
+        Some(AwsIdentity(
+          app = tags("App"),
+          stack = tags("Stack"),
+          stage = tags("Stage"),
+          region = EC2MetadataUtils.getEC2InstanceRegion
+        ))
+      case Success(None) => None
+      case Failure(NonFatal(err)) =>
+        logger.warn(s"Failed to get instance id from ec2 metadata service: ${err.getMessage}", err)
+        None
     }
   }
 
