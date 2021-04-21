@@ -8,7 +8,6 @@ import software.amazon.awssdk.services.autoscaling.AutoScalingClient
 import software.amazon.awssdk.services.autoscaling.model.{DescribeAutoScalingGroupsRequest, DescribeAutoScalingInstancesRequest}
 
 import scala.collection.JavaConverters._
-import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 sealed trait AppIdentity
@@ -74,7 +73,7 @@ object AppIdentity {
           region = EC2MetadataUtils.getEC2InstanceRegion
         ))
       case Success(None) => None
-      case Failure(NonFatal(err)) =>
+      case Failure(err) =>
         logger.warn(s"Failed to get instance id from ec2 metadata service: ${err.getMessage}", err)
         None
     }
