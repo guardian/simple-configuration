@@ -4,6 +4,15 @@
 
 _A configuration library without any magic_
 
+## Releasing
+
+There's something strange about releasing, meaning if you do `release` at the root, it doesn't actually
+publish the artifacts to sonatype.  It seems like then running the release again at the same version in
+one of the subprojects will actually release everything.  Please update this paragraph and the build.sbt
+if you work out anything more useful!
+I have updated the build.sbt from `publishTo := sonatypePublishToBundle.value` to `publishTo := sonatypePublishTo.value`
+as advised on Engineering chat.
+
 ## Goal
 This library will help you load the configuration of your application from S3 or the SSM parameter store.
 

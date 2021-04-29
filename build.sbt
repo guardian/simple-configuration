@@ -26,7 +26,7 @@ val awsSdkVersion = "2.16.7"
 
 scalaVersion := scala_2_11
 
-publishTo in ThisBuild := sonatypePublishToBundle.value
+publishTo in ThisBuild := sonatypePublishTo.value
 
 val sharedSettings = Seq(
   scalaVersion := scala_2_11,
