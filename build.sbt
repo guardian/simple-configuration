@@ -3,6 +3,22 @@ import ReleaseTransformations._
 name := "simple-configuration"
 organization := "com.gu"
 
+ThisBuild / scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/guardian/simple-configuration"),
+    "scm:git@github.com:guardian/simple-configuration.git"
+  )
+)
+
+ThisBuild / homepage := Some(url("https://github.com/guardian/simple-configuration"))
+
+ThisBuild / developers := List(Developer(
+  id = "Guardian",
+  name = "Guardian",
+  email = null,
+  url = url("https://github.com/guardian")
+))
+
 val scala_2_11: String = "2.11.12"
 val scala_2_12: String = "2.12.11"
 val scala_2_13: String = "2.13.2"
@@ -11,14 +27,14 @@ val awsSdkVersion = "1.11.772"
 
 scalaVersion := scala_2_11
 
+publishTo in ThisBuild := sonatypePublishTo.value
+
 val sharedSettings = Seq(
   scalaVersion := scala_2_11,
   crossScalaVersions := Seq(scala_2_11, scala_2_12, scala_2_13),
   releaseCrossBuild := true,
   licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html")),
   organization := "com.gu",
-  bintrayOrganization := Some("guardian"),
-  bintrayRepository := "platforms",
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
@@ -29,7 +45,8 @@ val sharedSettings = Seq(
     commitReleaseVersion,
     tagRelease,
     publishArtifacts,
-    releaseStepTask(bintrayRelease),
+    releaseStepCommandAndRemaining("+publishSigned"),
+    releaseStepCommand("sonatypeBundleRelease"),
     setNextVersion,
     commitNextVersion,
     pushChanges
