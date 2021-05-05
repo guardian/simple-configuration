@@ -20,17 +20,17 @@ ThisBuild / developers := List(Developer(
 ))
 
 //val scala_2_11: String = "2.11.12"
-//val scala_2_12: String = "2.12.11"
-val scala_2_13: String = "2.13.2"
+val scala_2_12: String = "2.12.11"
+//val scala_2_13: String = "2.13.2"
 
 val awsSdkVersion = "1.11.772"
 
-scalaVersion := scala_2_13
+scalaVersion := scala_2_12
 
 publishTo in ThisBuild := sonatypePublishTo.value
 
 val sharedSettings = Seq(
-  scalaVersion := scala_2_13,
+  scalaVersion := scala_2_12,
   releaseCrossBuild := true,
   licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html")),
   organization := "com.gu",
