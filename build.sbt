@@ -21,17 +21,16 @@ ThisBuild / developers := List(Developer(
 
 val scala_2_11: String = "2.11.12"
 val scala_2_12: String = "2.12.11"
-val scala_2_13: String = "2.13.2"
+//val scala_2_13: String = "2.13.2"
 
 val awsSdkVersion = "1.11.772"
 
-scalaVersion := scala_2_11
+scalaVersion := scala_2_12
 
 publishTo in ThisBuild := sonatypePublishTo.value
 
 val sharedSettings = Seq(
-  scalaVersion := scala_2_11,
-  crossScalaVersions := Seq(scala_2_11, scala_2_12, scala_2_13),
+  scalaVersion := scala_2_12,
   releaseCrossBuild := true,
   licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html")),
   organization := "com.gu",
@@ -89,7 +88,6 @@ lazy val root = project.in(file("."))
   .aggregate(core, s3, ssm)
   .settings(
     publish := {},
-    releaseCrossBuild := true,
-    crossScalaVersions := Seq(scala_2_11, scala_2_12, scala_2_13)
+    releaseCrossBuild := false,
   )
 
