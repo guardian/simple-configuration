@@ -31,7 +31,7 @@ publishTo in ThisBuild := sonatypePublishTo.value
 
 val sharedSettings = Seq(
   scalaVersion := scala_2_12,
-  releaseCrossBuild := true,
+  releaseCrossBuild := false,
   licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html")),
   organization := "com.gu",
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
@@ -44,7 +44,7 @@ val sharedSettings = Seq(
     commitReleaseVersion,
     tagRelease,
     publishArtifacts,
-    releaseStepCommandAndRemaining("+publishSigned"),
+    releaseStepCommandAndRemaining("publishSigned"),
     releaseStepCommand("sonatypeBundleRelease"),
     setNextVersion,
     commitNextVersion,
