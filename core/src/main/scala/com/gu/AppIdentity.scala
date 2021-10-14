@@ -13,15 +13,13 @@ import scala.util.{Failure, Success, Try}
 sealed trait AppIdentity
 
 case class AwsIdentity(
-                        app: String,
-                        stack: String,
-                        stage: String,
-                        region: String
-                      ) extends AppIdentity
+  app: String,
+  stack: String,
+  stage: String,
+  region: String
+) extends AppIdentity
 
-case class DevIdentity(
-                        app: String
-                      ) extends AppIdentity
+case class DevIdentity(app: String) extends AppIdentity
 
 object AppIdentity {
   private val logger = LoggerFactory.getLogger(this.getClass)
@@ -34,11 +32,13 @@ object AppIdentity {
   }
 
   private def fromASGTags(credentials: => AwsCredentialsProvider): Option[AwsIdentity] = {
+    val fetchedRegion = region(false)
+
     // We read tags from the AutoScalingGroup rather than the instance itself to avoid problems where the
     // tags have not been applied to the instance before we start up (they are eventually consistent)
     def withOneOffAsgClient[T](f: AutoScalingClient => T): T = {
       val asgClient: AutoScalingClient = AutoScalingClient.builder
-        .region(Region.of(region))
+        .region(Region.of(fetchedRegion))
         .credentialsProvider(credentials)
         .build()
       val returned = f(asgClient)
@@ -70,7 +70,7 @@ object AppIdentity {
           app = tags("App"),
           stack = tags("Stack"),
           stage = tags("Stage"),
-          region = EC2MetadataUtils.getEC2InstanceRegion
+          region = fetchedRegion
         ))
       case Success(None) => None
       case Failure(err) =>
@@ -102,23 +102,31 @@ object AppIdentity {
     } yield DevIdentity(defaultAppName)
   }
 
-  def region: String = {
-    lazy val ec2Region = safeAwsOperation("Failed to identify the regionName of the instance") {
-        EC2MetadataUtils.getEC2InstanceRegion
-      }
-    lazy val lambdaRegion = Option(System.getenv("AWS_DEFAULT_REGION"))
-    lambdaRegion orElse ec2Region getOrElse "eu-west-1"
-  }
+  def region(isDev: Boolean): String =
+    if (isDev)
+      "eu-west-1"
+    else {
+      lazy val ec2Region = safeAwsOperation("Failed to identify the regionName of the instance") {
+          EC2MetadataUtils.getEC2InstanceRegion // this takes 7 seconds to fail if you're not in EC2!
+        }
+      lazy val lambdaRegion = Option(System.getenv("AWS_DEFAULT_REGION"))
+      lambdaRegion orElse ec2Region getOrElse "eu-west-1"
+    }
 
   def whoAmI(
-              defaultAppName: String,
-              credentials: => AwsCredentialsProvider = DefaultCredentialsProvider.create()
-            ): AppIdentity = {
-    val result = fromTeamcityEnvVariables(defaultAppName)
-      .orElse(fromLambdaEnvVariables())
-      .orElse(fromASGTags(credentials))
-      .getOrElse(DevIdentity(defaultAppName))
-    logger.info(s"Detected the following AppIdentity: $result")
-    result
-  }
+    defaultAppName: String,
+    credentials: => AwsCredentialsProvider = DefaultCredentialsProvider.create(),
+    isDev: Boolean
+  ): AppIdentity =
+    if (isDev)
+      DevIdentity(defaultAppName) // speedup - EC2MetadataUtils takes 7 seconds to complete outside of EC2 i.e locally
+    else {
+      val result = fromTeamcityEnvVariables(defaultAppName)
+        .orElse(fromLambdaEnvVariables())
+        .orElse(fromASGTags(credentials))
+        .getOrElse(DevIdentity(defaultAppName))
+      logger.info(s"Detected the following AppIdentity: $result")
+      result
+    }
+
 }

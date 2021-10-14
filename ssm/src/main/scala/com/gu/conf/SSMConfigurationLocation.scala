@@ -1,6 +1,6 @@
 package com.gu.conf
 
-import com.gu.{AppIdentity, AwsIdentity}
+import com.gu.AwsIdentity
 import com.typesafe.config.{Config, ConfigFactory}
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
@@ -13,7 +13,7 @@ import scala.collection.JavaConverters._
 
 case class SSMConfigurationLocation(
   path: String,
-  region: String = AppIdentity.region
+  region: String
 ) extends ConfigurationLocation {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
@@ -57,6 +57,6 @@ case class SSMConfigurationLocation(
 
 object SSMConfigurationLocation {
   def default(identity: AwsIdentity): ConfigurationLocation = {
-    SSMConfigurationLocation(s"/${identity.stage}/${identity.stack}/${identity.app}")
+    SSMConfigurationLocation(s"/${identity.stage}/${identity.stack}/${identity.app}", identity.region)
   }
 }
