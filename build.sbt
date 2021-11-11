@@ -22,7 +22,7 @@ val scala_2_11: String = "2.11.12"
 val scala_2_12: String = "2.12.12"
 val scala_2_13: String = "2.13.5"
 
-val awsSdkVersion = "2.16.7"
+val awsSdkVersion = "2.17.73"
 
 scalaVersion := scala_2_11
 
