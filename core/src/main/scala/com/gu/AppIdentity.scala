@@ -1,7 +1,9 @@
 package com.gu
 
+import com.gu.AppIdentity.region
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.{AwsCredentialsProvider, DefaultCredentialsProvider}
+import software.amazon.awssdk.core.exception.SdkClientException
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.internal.util.EC2MetadataUtils
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient
@@ -13,30 +15,28 @@ import scala.util.{Failure, Success, Try}
 sealed trait AppIdentity
 
 case class AwsIdentity(
-                        app: String,
-                        stack: String,
-                        stage: String,
-                        region: String
-                      ) extends AppIdentity
+  app: String,
+  stack: String,
+  stage: String,
+  region: String
+) extends AppIdentity
 
-case class DevIdentity(
-                        app: String
-                      ) extends AppIdentity
+case class DevIdentity(app: String) extends AppIdentity
 
 object AppIdentity {
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  private def safeAwsOperation[A](errorMessage: => String)(operation: => A): Option[A] = Try(operation) match {
-    case Success(value) => Option(value)
-    case Failure(e) =>
-      logger.error(errorMessage, e)
-      None
-  }
+  private def safeAwsOperation[A](errorMessage: => String)(operation: => A): Try[A] =
+    Try(operation).recoverWith {
+      case e: Throwable =>
+        logger.error(errorMessage, e)
+        Failure(e)
+    }
 
-  private def fromASGTags(credentials: => AwsCredentialsProvider): Option[AwsIdentity] = {
+  private def fromASGTags(credentials: => AwsCredentialsProvider): Try[AwsIdentity] = {
     // We read tags from the AutoScalingGroup rather than the instance itself to avoid problems where the
     // tags have not been applied to the instance before we start up (they are eventually consistent)
-    def withOneOffAsgClient[T](f: AutoScalingClient => T): T = {
+    def withOneOffAsgClient[T](region: String, f: AutoScalingClient => T): T = {
       val asgClient: AutoScalingClient = AutoScalingClient.builder
         .region(Region.of(region))
         .credentialsProvider(credentials)
@@ -61,22 +61,23 @@ object AppIdentity {
       autoScalingGroup.tags.asScala.map { t => t.key -> t.value }.toMap
     }
 
-    // Historically `getInstanceId` would return null if metadata service is unavailable (hence the Option), but
-    // this has changed and now throws an exception instead. So for safety we still handle all possibilities.
-    Try(Option(EC2MetadataUtils.getInstanceId)) match {
-      case Success(Some(instanceId)) =>
-        val tags = withOneOffAsgClient(client => getTags(client, instanceId))
-        Some(AwsIdentity(
-          app = tags("App"),
-          stack = tags("Stack"),
-          stage = tags("Stage"),
-          region = EC2MetadataUtils.getEC2InstanceRegion
-        ))
-      case Success(None) => None
-      case Failure(err) =>
-        logger.warn(s"Failed to get instance id from ec2 metadata service: ${err.getMessage}", err)
-        None
-    }
+    // `getInstanceId` may return null or throw an exception, depending what went wrong
+    val result = for {
+      maybeId <- Try(Option(EC2MetadataUtils.getInstanceId)).recoverWith {
+        case e: SdkClientException => Failure(new RuntimeException("Running in DEV?  this may cause unnecessary delays due to timeouts outside of EC2: " + e.toString, e))
+      }
+      instanceId <- maybeId.toRight(new RuntimeException("no metadata available - this may cause delays due to timeouts when called in DEV")).toTry
+      region <- region
+      tags = withOneOffAsgClient(region, client => getTags(client, instanceId))
+    } yield
+      AwsIdentity(
+        app = tags("App"),
+        stack = tags("Stack"),
+        stage = tags("Stage"),
+        region = region
+      )
+    result
+
   }
 
 
@@ -102,23 +103,30 @@ object AppIdentity {
     } yield DevIdentity(defaultAppName)
   }
 
-  def region: String = {
-    lazy val ec2Region = safeAwsOperation("Failed to identify the regionName of the instance") {
+  def region: Try[String] = {
+    lazy val ec2Region = safeAwsOperation("Running in DEV? Don't call this - Timed out trying to identify the regionName of the instance") {
         EC2MetadataUtils.getEC2InstanceRegion
       }
     lazy val lambdaRegion = Option(System.getenv("AWS_DEFAULT_REGION"))
-    lambdaRegion orElse ec2Region getOrElse "eu-west-1"
+    lambdaRegion.map(Success(_)).getOrElse(ec2Region)
   }
 
+  /**
+   * Don't call this when running in DEV, as it will spend around 7 seconds timing out outside of EC2
+   * @param defaultAppName
+   * @param credentials
+   * @return
+   */
   def whoAmI(
-              defaultAppName: String,
-              credentials: => AwsCredentialsProvider = DefaultCredentialsProvider.create()
-            ): AppIdentity = {
+    defaultAppName: String,
+    credentials: => AwsCredentialsProvider
+  ): Try[AppIdentity] = {
     val result = fromTeamcityEnvVariables(defaultAppName)
-      .orElse(fromLambdaEnvVariables())
-      .orElse(fromASGTags(credentials))
-      .getOrElse(DevIdentity(defaultAppName))
-    logger.info(s"Detected the following AppIdentity: $result")
+      .orElse(fromLambdaEnvVariables()) match {
+      case Some(who) => Success(who)
+      case None => fromASGTags(credentials)
+    }
+    result.foreach(result => logger.info(s"Detected the following AppIdentity: $result"))
     result
   }
 }
