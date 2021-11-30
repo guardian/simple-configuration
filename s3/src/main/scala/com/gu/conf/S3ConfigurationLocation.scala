@@ -7,14 +7,13 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigParseOptions}
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.regions.Region
-import software.amazon.awssdk.regions.internal.util.EC2MetadataUtils
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 
 case class S3ConfigurationLocation(
   bucket: String,
   path: String,
-  region: String = EC2MetadataUtils.getEC2InstanceRegion
+  region: String
 ) extends ConfigurationLocation {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
@@ -37,7 +36,11 @@ case class S3ConfigurationLocation(
 }
 
 object S3ConfigurationLocation {
-  def default(identity: AwsIdentity): ConfigurationLocation = {
-    S3ConfigurationLocation(s"${identity.app}-dist", s"${identity.stage}/${identity.stack}/${identity.app}/${identity.app}.conf")
-  }
+  def default(identity: AwsIdentity): ConfigurationLocation =
+    S3ConfigurationLocation(
+      bucket = s"${identity.app}-dist",
+      path = s"${identity.stage}/${identity.stack}/${identity.app}/${identity.app}.conf",
+      region = identity.region
+    )
+
 }
