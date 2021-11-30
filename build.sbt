@@ -18,20 +18,19 @@ ThisBuild / developers := List(Developer(
   url = url("https://github.com/guardian")
 ))
 
-val scala_2_11: String = "2.11.12"
-val scala_2_12: String = "2.12.12"
-val scala_2_13: String = "2.13.5"
+val scala_2_12: String = "2.12.15"
+val scala_2_13: String = "2.13.7"
 
 val awsSdkVersion = "2.17.73"
 
-scalaVersion := scala_2_11
+scalaVersion := scala_2_13
 
-publishTo in ThisBuild := sonatypePublishTo.value
+ThisBuild / publishTo := sonatypePublishTo.value
 
 val sharedSettings = Seq(
-  scalaVersion := scala_2_11,
+  scalaVersion := scala_2_13,
   scalacOptions += "-target:jvm-1.8",
-  crossScalaVersions := Seq(scala_2_11, scala_2_12, scala_2_13),
+  crossScalaVersions := Seq(scala_2_12, scala_2_13),
   releaseCrossBuild := true,
   licenses += ("Apache-2.0", url(
     "http://www.apache.org/licenses/LICENSE-2.0.html"
@@ -90,5 +89,5 @@ lazy val root = project
   .settings(
     publish := {},
     releaseCrossBuild := true,
-    crossScalaVersions := Seq(scala_2_11, scala_2_12, scala_2_13)
+    crossScalaVersions := Seq(scala_2_12, scala_2_13)
   )
