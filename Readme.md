@@ -22,9 +22,9 @@ It relies on [lightbend's configuration library](https://github.com/typesafehub/
 
 In your `build.sbt`:
 ```scala
-libraryDependencies += "com.gu" %% "simple-configuration-s3" % "1.5.4"
+libraryDependencies += "com.gu" %% "simple-configuration-s3" % "1.5.7"
 // OR
-libraryDependencies += "com.gu" %% "simple-configuration-ssm" % "1.5.4"
+libraryDependencies += "com.gu" %% "simple-configuration-ssm" % "1.5.7"
 ```
 
 Then in your code:
@@ -34,10 +34,18 @@ import com.gu.{AppIdentity, AwsIdentity}
 import com.gu.conf.{ConfigurationLoader, S3ConfigurationLocation}
 import com.typesafe.config.Config
 
-val identity = AppIdentity.whoAmI(defaultAppName = "mobile-apps-api")
-val config: Config = ConfigurationLoader.load(identity) {
-  case identity: AwsIdentity => S3ConfigurationLocation.default(identity)
-}
+val CredentialsProvider = DefaultCredentialsProvider.create()
+val isDev = context.environment.mode == Mode.Dev
+val config =
+  for {
+    identity <- if (isDev)
+      Success(DevIdentity("support-frontend"))
+   else
+     AppIdentity.whoAmI(defaultAppName = "support-frontend", CredentialsProvider)
+   config <- Try(ConfigurationLoader.load(identity, CredentialsProvider) {
+     case identity: AwsIdentity => S3ConfigurationLocation.default(identity)
+   }
+  } yield config
 ```
 
 Let's look in detail at what's happening here.
@@ -56,11 +64,7 @@ case class AwsIdentity(
 ) extends AppIdentity
 ```
 
-If you are not running on an ec2 instance or a lambda - for instance when testing locally - the function will return an AppIdentity subtype: DevIdentity initialised with the defaultAppName you provided. It is defined as follows:
-
-```scala
-case class DevIdentity(app: String) extends AppIdentity
-```
+If you are not running on an ec2 instance or a lambda - for instance when testing locally - the function will return a failed Try once the AWS call times out.  This causes a delay when starting the app locally, so it's recommended to create the DevIdentity yourself if you're running in DEV.
 
 If you don't need to auto-detect the identity of your application, you can instantiate an AppIdentity yourself and provide the values you want.
 
