@@ -26,12 +26,11 @@ case class DevIdentity(app: String) extends AppIdentity
 object AppIdentity {
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  private def safeAwsOperation[A](errorMessage: => String)(operation: => A): Try[A] =
-    Try(operation).recoverWith {
-      case e: Throwable =>
-        logger.error(errorMessage, e)
-        Failure(e)
-    }
+  private def safeAwsOperation[A](errorMessage: => String)(operation: => A): Try[A] = {
+    val result = Try(operation)
+    result.failed.foreach(e => logger.error(errorMessage, e))
+    result
+  }
 
   private def fromASGTags(credentials: => AwsCredentialsProvider): Try[AwsIdentity] = {
     // We read tags from the AutoScalingGroup rather than the instance itself to avoid problems where the
