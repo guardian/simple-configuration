@@ -150,7 +150,7 @@ class MyApplicationLoader extends ApplicationLoader {
     val loadedConfig = ConfigurationLoader.load(identity) {
       case identity: AwsIdentity => S3ConfigurationLocation.default(identity)
     }
-    val newContext = context.copy(initialConfiguration = context.initialConfiguration ++ Configuration(loadedConfig))
+    val newContext = context.copy(initialConfiguration = Configuration(loadedConfig).withFallback(context.initialConfiguration))
     (new BuiltInComponentsFromContext(newContext) with AppComponents).application
   }
 }
