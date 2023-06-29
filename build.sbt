@@ -19,7 +19,7 @@ ThisBuild / developers := List(Developer(
 ))
 
 val scala_2_12: String = "2.12.18"
-val scala_2_13: String = "2.13.7"
+val scala_2_13: String = "2.13.11"
 
 val awsSdkVersion = "2.17.73"
 
