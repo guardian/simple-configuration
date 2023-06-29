@@ -18,8 +18,8 @@ ThisBuild / developers := List(Developer(
   url = url("https://github.com/guardian")
 ))
 
-val scala_2_12: String = "2.12.15"
-val scala_2_13: String = "2.13.7"
+val scala_2_12: String = "2.12.18"
+val scala_2_13: String = "2.13.11"
 
 val awsSdkVersion = "2.17.295"
 
@@ -60,8 +60,8 @@ val core = project
     libraryDependencies ++= Seq(
       "software.amazon.awssdk" % "ec2" % awsSdkVersion,
       "software.amazon.awssdk" % "autoscaling" % awsSdkVersion,
-      "com.typesafe" % "config" % "1.4.1",
-      "org.slf4j" % "slf4j-api" % "1.7.30"
+      "com.typesafe" % "config" % "1.4.2",
+      "org.slf4j" % "slf4j-api" % "1.7.36"
     )
   )
 
