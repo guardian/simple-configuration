@@ -29,7 +29,6 @@ ThisBuild / publishTo := sonatypePublishTo.value
 
 val sharedSettings = Seq(
   scalaVersion := scala_2_13,
-  scalacOptions += "-target:jvm-1.8",
   crossScalaVersions := Seq(scala_2_12, scala_2_13),
   releaseCrossBuild := true,
   licenses += ("Apache-2.0", url(
