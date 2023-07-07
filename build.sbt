@@ -21,7 +21,7 @@ ThisBuild / developers := List(Developer(
 val scala_2_12: String = "2.12.18"
 val scala_2_13: String = "2.13.11"
 
-val awsSdkVersion = "2.20.96"
+val awsSdkVersion = "2.20.97"
 
 scalaVersion := scala_2_13
 
@@ -29,7 +29,6 @@ ThisBuild / publishTo := sonatypePublishTo.value
 
 val sharedSettings = Seq(
   scalaVersion := scala_2_13,
-  scalacOptions += "-target:jvm-1.8",
   crossScalaVersions := Seq(scala_2_12, scala_2_13),
   releaseCrossBuild := true,
   licenses += ("Apache-2.0", url(
