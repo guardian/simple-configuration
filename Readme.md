@@ -7,6 +7,7 @@ _A configuration library without any magic_
 ## Releasing
 
 Run `sbt release` at the root to publish the artifacts to sonatype. For instructions on how to set up publishing, visit [this doc](https://docs.google.com/document/d/1rNXjoZDqZMsQblOVXPAIIOMWuwUKe3KzTCttuqS7AcY/edit).
+Once the release is complete, push the automated commit to `main` which updated `version.sbt` as part of the release process.
 
 ## Goal
 This library will help you load the configuration of your application from S3 or the SSM parameter store.
