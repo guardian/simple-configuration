@@ -7,7 +7,10 @@ _A configuration library without any magic_
 ## Releasing
 
 Run `sbt release` at the root to publish the artifacts to sonatype. For instructions on how to set up publishing, visit [this doc](https://docs.google.com/document/d/1rNXjoZDqZMsQblOVXPAIIOMWuwUKe3KzTCttuqS7AcY/edit).
-Once the release is complete, push the automated commit to `main` which updated `version.sbt` as part of the release process.
+
+[!IMPORTANT]
+For some reason, releases are not promoted from staging, so you will need to do this manually if you notice your package sitting in [staging](https://oss.sonatype.org/#stagingRepositories). First 'close' the staged package, then choose 'release' and this will promote it to Maven.
+Our investigations imply that the `releaseStepCommand("sonatypeBundleRelease")` step is not running during release, but this has not been fully investigated for time reasons.
 
 ## Goal
 This library will help you load the configuration of your application from S3 or the SSM parameter store.
