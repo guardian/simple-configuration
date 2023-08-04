@@ -1,6 +1,7 @@
 import ReleaseTransformations._
 
 name := "simple-configuration"
+sonatypeProfileName := "com.gu"
 
 ThisBuild / scmInfo := Some(
   ScmInfo(
@@ -36,6 +37,9 @@ val sharedSettings = Seq(
   )),
   organization := "com.gu",
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+
+  sonatypeProfileName := "com.gu",
+
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
@@ -88,5 +92,6 @@ lazy val root = project
   .settings(
     publish := {},
     releaseCrossBuild := true,
-    crossScalaVersions := Seq(scala_2_12, scala_2_13)
+    crossScalaVersions := Seq(scala_2_12, scala_2_13),
+    sonatypeProfileName := "com.gu",
   )
