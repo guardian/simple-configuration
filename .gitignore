@@ -1,3 +1,11 @@
+# IDE
 .idea
+.vscode
+
 target
 .bsp
+
+# Metals
+metals.sbt
+.metals
+.bloop
