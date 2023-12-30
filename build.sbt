@@ -60,7 +60,7 @@ val core = project
       "software.amazon.awssdk" % "ec2" % awsSdkVersion,
       "software.amazon.awssdk" % "autoscaling" % awsSdkVersion,
       "com.typesafe" % "config" % "1.4.3",
-      "org.slf4j" % "slf4j-api" % "2.0.9"
+      "org.slf4j" % "slf4j-api" % "2.0.10"
     )
   )
 
