@@ -16,7 +16,6 @@ val sharedSettings = Seq(
   releaseCrossBuild := true,
   licenses := Seq(License.Apache2),
   organization := "com.gu",
-  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
