@@ -13,20 +13,8 @@ scalaVersion := scala_2_13
 val sharedSettings = Seq(
   scalaVersion := scala_2_13,
   crossScalaVersions := Seq(scala_2_12, scala_2_13),
-  releaseCrossBuild := true,
   licenses := Seq(License.Apache2),
   organization := "com.gu",
-  releaseProcess := Seq[ReleaseStep](
-    checkSnapshotDependencies,
-    inquireVersions,
-    runClean,
-    runTest,
-    setReleaseVersion,
-    commitReleaseVersion,
-    tagRelease,
-    setNextVersion,
-    commitNextVersion
-  ),
   scalacOptions := Seq("-release:11")
 )
 
@@ -66,6 +54,17 @@ lazy val root = project
   .settings(
     publish / skip := true,
     releaseCrossBuild := true,
+    releaseProcess := Seq[ReleaseStep](
+      checkSnapshotDependencies,
+      inquireVersions,
+      runClean,
+      runTest,
+      setReleaseVersion,
+      commitReleaseVersion,
+      tagRelease,
+      setNextVersion,
+      commitNextVersion
+    ),
     crossScalaVersions := Seq(scala_2_12, scala_2_13),
     releaseVersion := ReleaseVersion.fromAggregatedAssessedCompatibilityWithLatestRelease().value
   )
