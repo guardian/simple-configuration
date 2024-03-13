@@ -1,18 +1,15 @@
-import ReleaseTransformations._
+import ReleaseTransformations.*
 import sbtversionpolicy.withsbtrelease.ReleaseVersion
 
 name := "simple-configuration"
 
-val scala_2_12: String = "2.12.19"
-val scala_2_13: String = "2.13.13"
-
 val awsSdkVersion = "2.25.26"
 
-scalaVersion := scala_2_13
+scalaVersion := "2.13.13"
 
 val sharedSettings = Seq(
-  scalaVersion := scala_2_13,
-  crossScalaVersions := Seq(scala_2_12, scala_2_13),
+  scalaVersion := "2.13.13",
+  crossScalaVersions := Seq("3.3.3", scalaVersion.value, "2.12.19"),
   licenses := Seq(License.Apache2),
   organization := "com.gu",
   scalacOptions := Seq("-release:11")
@@ -54,6 +51,7 @@ lazy val root = project
   .settings(
     publish / skip := true,
     releaseCrossBuild := true,
+    releaseVersion := ReleaseVersion.fromAggregatedAssessedCompatibilityWithLatestRelease().value,
     releaseProcess := Seq[ReleaseStep](
       checkSnapshotDependencies,
       inquireVersions,
@@ -64,7 +62,5 @@ lazy val root = project
       tagRelease,
       setNextVersion,
       commitNextVersion
-    ),
-    crossScalaVersions := Seq(scala_2_12, scala_2_13),
-    releaseVersion := ReleaseVersion.fromAggregatedAssessedCompatibilityWithLatestRelease().value
+    )
   )
