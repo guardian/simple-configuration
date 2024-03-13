@@ -1,16 +1,15 @@
 # simple-configuration
 
-[ ![Download](https://api.bintray.com/packages/guardian/platforms/simple-configuration-core/images/download.svg) ](https://bintray.com/guardian/platforms/simple-configuration-core/_latestVersion)
+[![simple-configuration-core Scala version support](https://index.scala-lang.org/guardian/simple-configuration/simple-configuration-core/latest-by-scala-version.svg?platform=jvm)](https://index.scala-lang.org/guardian/simple-configuration/simple-configuration-core)
+[![Release](https://github.com/guardian/simple-configuration/actions/workflows/release.yml/badge.svg)](https://github.com/guardian/simple-configuration/actions/workflows/release.yml)
 
 _A configuration library without any magic_
 
-## Releasing
+# Publishing a new release
 
-Run `sbt release` at the root to publish the artifacts to sonatype. For instructions on how to set up publishing, visit [this doc](https://docs.google.com/document/d/1rNXjoZDqZMsQblOVXPAIIOMWuwUKe3KzTCttuqS7AcY/edit).
-
-[!IMPORTANT]
-For some reason, releases are not promoted from staging, so you will need to do this manually if you notice your package sitting in [staging](https://oss.sonatype.org/#stagingRepositories). First 'close' the staged package, then choose 'release' and this will promote it to Maven.
-Our investigations imply that the `releaseStepCommand("sonatypeBundleRelease")` step is not running during release, but this has not been fully investigated for time reasons.
+This repo uses [`gha-scala-library-release-workflow`](https://github.com/guardian/gha-scala-library-release-workflow)
+to automate publishing releases (both full & preview releases) - see
+[**Making a Release**](https://github.com/guardian/gha-scala-library-release-workflow/blob/main/docs/making-a-release.md).
 
 ## Goal
 This library will help you load the configuration of your application from S3 or the SSM parameter store.
