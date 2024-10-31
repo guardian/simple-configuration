@@ -5,10 +5,10 @@ name := "simple-configuration"
 
 val awsSdkVersion = "2.27.24"
 
-scalaVersion := "2.13.13"
+scalaVersion := "2.13.14"
 
 val sharedSettings = Seq(
-  scalaVersion := "2.13.13",
+  scalaVersion := "2.13.14",
   crossScalaVersions := Seq("3.3.3", scalaVersion.value, "2.12.19"),
   licenses := Seq(License.Apache2),
   organization := "com.gu",
@@ -23,7 +23,7 @@ val core = project
       "software.amazon.awssdk" % "ec2" % awsSdkVersion,
       "software.amazon.awssdk" % "autoscaling" % awsSdkVersion,
       "com.typesafe" % "config" % "1.4.3",
-      "org.slf4j" % "slf4j-api" % "2.0.13"
+      "org.slf4j" % "slf4j-api" % "2.0.16"
     )
   )
 
