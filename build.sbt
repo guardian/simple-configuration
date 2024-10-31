@@ -9,7 +9,7 @@ scalaVersion := "2.13.15"
 
 val sharedSettings = Seq(
   scalaVersion := "2.13.15",
-  crossScalaVersions := Seq("3.3.3", scalaVersion.value, "2.12.20"),
+  crossScalaVersions := Seq("3.3.4", scalaVersion.value, "2.12.20"),
   licenses := Seq(License.Apache2),
   organization := "com.gu",
   scalacOptions := Seq("-release:11")
