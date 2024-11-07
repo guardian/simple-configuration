@@ -79,7 +79,7 @@ def whoAmI(
 ### ConfigurationLoader.load
 
 This function will load your configuration from its source (S3, file, SSM), or locally if you are in dev mode.
-It will use the identity to understand where the app is running, and load the configuration accordingly. It will of course need the appropriate IAM permission, as defined in the [paragraph bellow](#iam-permissions).
+It will use the identity to understand where the app is running, and load the configuration accordingly. It will of course need the appropriate IAM permission, as defined in the [paragraph below](#iam-permissions).
 
 By default the configuration are loaded from the following locations:
 
