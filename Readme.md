@@ -42,7 +42,7 @@ val config =
      AppIdentity.whoAmI(defaultAppName = "support-frontend", CredentialsProvider)
    config <- Try(ConfigurationLoader.load(identity, CredentialsProvider) {
      case identity: AwsIdentity => S3ConfigurationLocation.default(identity)
-   }
+   })
   } yield config
 ```
 
