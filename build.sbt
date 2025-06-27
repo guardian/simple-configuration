@@ -20,10 +20,21 @@ val core = project
   .settings(
     name := "simple-configuration-core",
     libraryDependencies ++= Seq(
-      "software.amazon.awssdk" % "ec2" % awsSdkVersion,
-      "software.amazon.awssdk" % "autoscaling" % awsSdkVersion,
+      "software.amazon.awssdk" % "sdk-core" % awsSdkVersion,
+      "software.amazon.awssdk" % "auth" % awsSdkVersion,
       "com.typesafe" % "config" % "1.4.3",
       "org.slf4j" % "slf4j-api" % "2.0.17"
+    )
+  )
+
+lazy val ec2 = project
+  .settings(sharedSettings)
+  .dependsOn(core)
+  .settings(
+    name := "simple-configuration-ec2",
+    libraryDependencies ++= Seq(
+      "software.amazon.awssdk" % "ec2" % awsSdkVersion,
+      "software.amazon.awssdk" % "autoscaling" % awsSdkVersion,
     )
   )
 
@@ -47,7 +58,16 @@ val ssm = project
 
 lazy val root = project
   .in(file("."))
-  .aggregate(core, s3, ssm)
+  .aggregate(core, ec2, s3, ssm)
+  .settings(sharedSettings)
+  .dependsOn(core, ec2, s3, ssm)
+  .settings(
+    name := "simple-configuration",
+    Compile / scalaSource := baseDirectory.value / "examples",
+    libraryDependencies ++= Seq(
+      "org.playframework" %% "play" % "3.0.7",
+    )
+  )
   .settings(
     publish / skip := true,
     releaseCrossBuild := true,

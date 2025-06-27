@@ -12,46 +12,43 @@ to automate publishing releases (both full & preview releases) - see
 [**Making a Release**](https://github.com/guardian/gha-scala-library-release-workflow/blob/main/docs/making-a-release.md).
 
 ## Goal
-This library will help you load the configuration of your application from S3 or the SSM parameter store.
+This library will help you find and load the configuration of your application from the SSM parameter store.
 
-It relies on [lightbend's configuration library](https://github.com/typesafehub/config), AWS' S3 SDK, SSM SDK and EC2 SDK.
+It relies on [lightbend's configuration library](https://github.com/typesafehub/config), SSM SDK and EC2 SDK.
+
+Although SSM is preferred, apps can load their configuration from S3 instead.
 
 ## Usage
 
 In your `build.sbt`:
 ```scala
-libraryDependencies += "com.gu" %% "simple-configuration-s3" % "1.5.7"
-// OR
 libraryDependencies += "com.gu" %% "simple-configuration-ssm" % "1.5.7"
 ```
-
-Then in your code:
-
+and if you're running on EC2 and want to read the app identity from the ASG tags:
 ```scala
-import com.gu.{AppIdentity, AwsIdentity}
-import com.gu.conf.{ConfigurationLoader, S3ConfigurationLocation}
-import com.typesafe.config.Config
-
-val CredentialsProvider = DefaultCredentialsProvider.create()
-val isDev = context.environment.mode == Mode.Dev
-val config =
-  for {
-    identity <- if (isDev)
-      Success(DevIdentity("support-frontend"))
-   else
-     AppIdentity.whoAmI(defaultAppName = "support-frontend", CredentialsProvider)
-   config <- Try(ConfigurationLoader.load(identity, CredentialsProvider) {
-     case identity: AwsIdentity => S3ConfigurationLocation.default(identity)
-   })
-  } yield config
+libraryDependencies += "com.gu" %% "simple-configuration-ec2" % "1.5.7"
 ```
+S3 support is available by using 
+```scala
+libraryDependencies += "com.gu" %% "simple-configuration-s3" % "1.5.7"
+```
+
+Then in your code follow one of the examples:
+
+[examples/Example.scala](examples/Example.scala)
 
 Let's look in detail at what's happening here.
 
-### AppIdentity.whoAmI (optional)
-The `AppIdentity.whoAmI` function is a helper that will try to identify your application via the tags (`App`, `Stack`, `Stage`) set on the ec2 instance you are running, or via the environment variables you set on your lambda (`App`, `Stack`, `Stage`, and the one provided by AWS `AWS_DEFAULT_REGION`). It will need the appropriate IAM permission to be able to query the ec2 API (see [IAM paragraph below](#iam-permissions))
+### DevIdentity
 
-If you are running your application on an ec2 instance or a lambda, the function will return an AppIdentity subtype: AwsIdentity defined as follows:
+A DevIdentity can locate a local configuration file, classpath resource, or other location.
+```scala
+case class DevIdentity(app: String) extends AppIdentity
+```
+Create one manually if you know you need to use local config e.g. in a test.
+
+### AwsIdentity
+An AwsIdentity can locate configuration in the standard AWS locations.
 
 ```scala
 case class AwsIdentity(
@@ -62,33 +59,31 @@ case class AwsIdentity(
 ) extends AppIdentity
 ```
 
-If you are not running on an ec2 instance or a lambda - for instance when testing locally - the function will return a failed Try once the AWS call times out.  This causes a delay when starting the app locally, so it's recommended to create the DevIdentity yourself if you're running in DEV.
+If you know you are running in AWS, you can auto-detect.  Warning: locally, attempting to use Ec2AppIdentity hangs for 7 seconds.
 
-If you don't need to auto-detect the identity of your application, you can instantiate an AppIdentity yourself and provide the values you want.
+The `Ec2AppIdentity.whoAmI` returns an `AwsIdentity` based on the tags (`App`, `Stack`, `Stage`) automatically set via riff-raff on the cloudformation stack.   It will need the appropriate IAM permission to be able to query the ec2 API (see [IAM paragraph below](#iam-permissions))
 
-You can optionally provide your [own AWS credentials](#examples) rather than relying on the defaults if you were to prefer controlling that aspect. It is defined liked that:
+The `LambdaAppIdentity.whoAmI` uses the environment variables that [CDK sets](https://github.com/guardian/cdk/blob/074dca40986e4a667561e75d51b1deb841584cf7/src/constructs/lambda/lambda.ts#L134-L138) on your lambda (`App`, `Stack`, `Stage`, and the one provided by AWS `AWS_DEFAULT_REGION`).
 
-```scala
-def whoAmI(
-  defaultAppName: String,
-  credentials: => AWSCredentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
-): AppIdentity
-```
+### SSMConfigurationLoader.load
 
-### ConfigurationLoader.load
-
-This function will load your configuration from its source (S3, file, SSM), or locally if you are in dev mode.
-It will use the identity to understand where the app is running, and load the configuration accordingly. It will of course need the appropriate IAM permission, as defined in the [paragraph bellow](#iam-permissions).
+This function will load your configuration from SSM, or locally if you are in dev mode.
+It will use the identity to understand where the app is running, and load the configuration accordingly. It will of course need the appropriate IAM permission, as defined in the [paragraph below](#iam-permissions).
 
 By default the configuration are loaded from the following locations:
 
 `~/.gu/${identity.app}.conf` for the local file if you are in dev mode (AppIdentity is of type DevIdentity)
 
-`s3://${identity.app}-dist/${identity.stage}/${identity.stack}/${identity.app}/${identity.app}.conf` once running on an EC2 instance or
-
 `/${identity.stage}/${identity.stack}/${identity.app}/*` if you're loading it from the SSM parameter store
 
-`ConfigurationLoader.load` is defined like that:
+If wish to use S3, `S3ConfigurationLoader.load` will load from the following location:
+
+`s3://${identity.app}-dist/${identity.stage}/${identity.stack}/${identity.app}/${identity.app}.conf`
+
+### Customised config locations
+
+If you want to load from a custom location, for example a classpath resource, or a different S3 location, you can use the `ConfigurationLoader.load` method.
+
 ```scala
 def load(
   identity: AppIdentity,
@@ -100,7 +95,7 @@ The only parameter you need to provide is the identity, other parameters will us
 
 `identity`: identity is a parameter of type `AppIdentity` that describes your application (name, stack, stage, awsRegion). See [above paragraph](#appidentitywhoami-optional) about AppIdentity.whoAmI
 
-`credentials`: These are the AWS credentials that will be used to load your configuration from S3. The default behaviour should be enough, but if you wanted to customise the way the credentials are picked you could pass it as a parameter. Note that it's a pass-by-name parameter so the content won't be evaluated unless needed. The default behaviour when running locally is to load the configuration from a local file, so credentials won't be evaluated in that case.
+`credentials`: These are the AWS credentials that will be used to load your configuration from AWS. The default behaviour should be enough, but if you wanted to customise the way the credentials are picked you could pass it as a parameter. Note that it's a pass-by-name parameter so the content won't be evaluated unless needed. The default behaviour when running locally is to load the configuration from a local file, so credentials won't be evaluated in that case.
 
 `locationFunction`: This function is a way to customise where to load the configuration depending on the environment. For instance if your configuration is in the same place for two different stacks or if you're using the same configuration file for multiple apps (multi-module project) you could override the path that will be used. It's a partial function, so it's thought to be used as pattern matching on the `AppIdentity` you provided. You can see an [example below](#examples) or you can see what return types are possible in the [Location Types paragraph](#location-types).
 
@@ -210,6 +205,7 @@ _Note that you won't need it for a lambda as these are passed as environment var
 }
 ```
 ### When loading the configuration from SSM
+Note that CDK GuLambdaFunction automatically gives [suitable permissions](https://github.com/guardian/cdk/blob/074dca40986e4a667561e75d51b1deb841584cf7/src/constructs/iam/policies/parameter-store-read.ts#L10) to the lambda.
 ```json
 {
     "Effect": "Allow",
