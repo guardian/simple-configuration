@@ -22,7 +22,7 @@ val core = project
     libraryDependencies ++= Seq(
       "software.amazon.awssdk" % "regions" % awsSdkVersion,
       "software.amazon.awssdk" % "autoscaling" % awsSdkVersion,
-      "com.typesafe" % "config" % "1.4.3",
+      "com.typesafe" % "config" % "1.4.4",
       "org.slf4j" % "slf4j-api" % "2.0.17"
     )
   )
