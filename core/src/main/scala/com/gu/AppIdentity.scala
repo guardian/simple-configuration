@@ -84,9 +84,9 @@ object AppIdentity {
 
   private def fromLambdaEnvVariables(): Option[AppIdentity] = {
     for {
-      app <- getEnv("App")
-      stack <- getEnv("Stack")
-      stage <- getEnv("Stage")
+      app <- getEnv("App").orElse(getEnv("APP"))
+      stack <- getEnv("Stack").orElse(getEnv("STACK"))
+      stage <- getEnv("Stage").orElse(getEnv("STAGE"))
       region <- getEnv("AWS_DEFAULT_REGION")
     } yield AwsIdentity(
       app = app,
