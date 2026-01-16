@@ -85,8 +85,8 @@ object AppIdentity {
   private def getEnvPreferUpperCase(variableName: String): Option[String] =
     getEnv(variableName.toUpperCase).orElse(getEnv(variableName))
   
-private def fromLambdaEnvVariables(): Option[AppIdentity] = {
-for {
+  private def fromLambdaEnvVariables(): Option[AppIdentity] = {
+    for {
       app <- getEnvPreferUpperCase("App")
       stack <- getEnvPreferUpperCase("Stack")
       stage <- getEnvPreferUpperCase("Stage")
