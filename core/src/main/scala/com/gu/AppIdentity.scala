@@ -82,19 +82,14 @@ object AppIdentity {
 
   private def getEnv(variableName: String): Option[String] = Option(System.getenv(variableName))
 
+  private def getEnv(variableName: String, altVariableName: String): Option[String] =
+    getEnv(variableName).orElse(getEnv(altVariableName))
+  
   private def fromLambdaEnvVariables(): Option[AppIdentity] = {
     for {
-      app <- getEnv("App").orElse(getEnv("APP"))
-      stack <- getEnv("Stack").orElse(getEnv("STACK"))
-  private def getEnv(variableName: String): Option[String] = Option(System.getenv(variableName))
-  private def getGuCDKEnv(titleCaseVarName: String): Option[String] =
-    getEnv(titleCaseVarName).orElse(getEnv(titleCaseVarName.toUpperCase))
-
-  private def fromLambdaEnvVariables(): Option[AppIdentity] = {
-    for {
-      app <- getGuCDKEnv("App")
-      stack <- getGuCDKEnv("Stack")
-      stage <- getGuCDKEnv("Stage")
+      app <- getEnv("APP", "App")
+      stack <- getEnv("STACK", "Stack")
+      stage <- getEnv("STAGE", "Stage")
       region <- getEnv("AWS_DEFAULT_REGION")
     } yield AwsIdentity(
       app = app,
