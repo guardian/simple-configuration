@@ -82,11 +82,14 @@ object AppIdentity {
 
   private def getEnv(variableName: String): Option[String] = Option(System.getenv(variableName))
 
+  private def getEnvPreferUpperCase(variableName: String): Option[String] =
+    getEnv(variableName.toUpperCase).orElse(getEnv(variableName))
+  
   private def fromLambdaEnvVariables(): Option[AppIdentity] = {
     for {
-      app <- getEnv("App")
-      stack <- getEnv("Stack")
-      stage <- getEnv("Stage")
+      app <- getEnvPreferUpperCase("App")
+      stack <- getEnvPreferUpperCase("Stack")
+      stage <- getEnvPreferUpperCase("Stage")
       region <- getEnv("AWS_DEFAULT_REGION")
     } yield AwsIdentity(
       app = app,
