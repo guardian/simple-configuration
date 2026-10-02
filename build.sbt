@@ -3,7 +3,7 @@ import sbtversionpolicy.withsbtrelease.ReleaseVersion
 
 name := "simple-configuration"
 
-val awsSdkVersion = "2.54.0"
+val awsSdkVersion = "2.55.10"
 
 scalaVersion := "2.13.18"
 
