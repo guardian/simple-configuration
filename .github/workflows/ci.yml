@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - uses: guardian/setup-scala@v1
+      - uses: guardian/setup-scala@v2
 
       - name: Build
         run: |
